@@ -1,6 +1,7 @@
 import pytest
 
 from app import llm
+from app.llm import chat_model as real_chat_model  # captured before conftest blocks real LLM calls
 
 
 def test_key_pool_skips_parked_keys_and_uses_fallback():
@@ -53,3 +54,31 @@ def test_model_routing():
 
 async def _no_sleep(_):
     return None
+
+
+def test_thinking_budget_only_for_gemini_25(monkeypatch):
+    captured = {}
+
+    class FakeGemini:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr(llm, "ChatGoogleGenerativeAI", FakeGemini)
+    real_chat_model("gemini-2.5-flash", api_key="k", thinking_budget=512, max_output_tokens=100)
+    assert captured["thinking_budget"] == 512 and captured["max_output_tokens"] == 100
+    assert captured["timeout"] == llm.settings.llm_timeout_s
+    captured.clear()
+    real_chat_model("gemini-3.1-flash-lite", api_key="k", thinking_budget=512)
+    assert "thinking_budget" not in captured and "max_output_tokens" not in captured
+
+
+async def test_run_chat_times_out_hanging_calls(monkeypatch):
+    monkeypatch.setattr(llm.settings, "llm_timeout_s", 0.05)
+    monkeypatch.setattr(llm.settings, "xai_api_key", "x")
+    monkeypatch.setattr(llm, "chat_model", lambda *args, **kwargs: "model")
+
+    async def hangs(model):
+        await llm.asyncio.sleep(5)
+
+    with pytest.raises(TimeoutError):
+        await llm.run_chat("grok-4", hangs)

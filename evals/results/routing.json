@@ -1,0 +1,2093 @@
+{
+  "meta": {
+    "run_at": "2026-09-11T16:43:20+00:00",
+    "offline": false,
+    "embedding_model": "gemini-embedding-001",
+    "embedding_dimension": 768,
+    "default_model": "gemini-2.5-flash",
+    "cases": 30,
+    "repeat": 3,
+    "models": [
+      "gemini-2.5-flash",
+      "gemini-3.1-flash-lite"
+    ],
+    "failed_models": {}
+  },
+  "models": {
+    "gemini-2.5-flash": {
+      "errors": 0,
+      "exact_plan_accuracy": 0.9111111111111111,
+      "first_step_accuracy": 0.9166666666666666,
+      "clarification_accuracy": 1.0,
+      "consistency": 0.8333333333333334,
+      "latency_p50_s": 1.758,
+      "latency_p95_s": 2.295,
+      "tokens_mean": 629.9888888888889,
+      "cost_per_routing_usd": 0.0004889555555555556,
+      "per_agent": {
+        "assistant": {
+          "precision": 0.9,
+          "recall": 0.75
+        },
+        "files": {
+          "precision": 0.9,
+          "recall": 1.0
+        },
+        "finance": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "knowledge": {
+          "precision": 1.0,
+          "recall": 0.8333333333333334
+        },
+        "sheets": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "sql": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "web": {
+          "precision": 1.0,
+          "recall": 0.8888888888888888
+        }
+      }
+    },
+    "gemini-3.1-flash-lite": {
+      "errors": 0,
+      "exact_plan_accuracy": 1.0,
+      "first_step_accuracy": 1.0,
+      "clarification_accuracy": 1.0,
+      "consistency": 1.0,
+      "latency_p50_s": 1.297,
+      "latency_p95_s": 1.761,
+      "tokens_mean": 567.2333333333333,
+      "cost_per_routing_usd": 0.00020261111111111112,
+      "per_agent": {
+        "assistant": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "files": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "finance": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "knowledge": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "sheets": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "sql": {
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        "web": {
+          "precision": 1.0,
+          "recall": 1.0
+        }
+      }
+    }
+  },
+  "runs": {
+    "gemini-2.5-flash": [
+      {
+        "r01": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to query for open deals and their total value, which requires accessing and aggregating data from a database.",
+          "latency_s": 1.667,
+          "cost_usd": 0.000468,
+          "tokens": 622
+        },
+        "r02": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to filter customers based on their order history, which requires querying a SQL database.",
+          "latency_s": 1.687,
+          "cost_usd": 0.000426,
+          "tokens": 606
+        },
+        "r03": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to list overdue invoices with customer names and amounts, which requires querying the company's SQL database.",
+          "latency_s": 1.808,
+          "cost_usd": 0.000489,
+          "tokens": 634
+        },
+        "r04": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to identify top customers by revenue, which requires querying the company's SQL database.",
+          "latency_s": 1.844,
+          "cost_usd": 0.000407,
+          "tokens": 594
+        },
+        "r05": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to count new customers signed up in May, which requires querying the company SQL database.",
+          "latency_s": 1.744,
+          "cost_usd": 0.000489,
+          "tokens": 624
+        },
+        "r06": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking a question about the company's refund policy, which is information typically found in a knowledge base.",
+          "latency_s": 1.847,
+          "cost_usd": 0.000453,
+          "tokens": 609
+        },
+        "r07": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking about a past meeting's decision, which can be found in indexed documents, notes, or reports in the knowledge base.",
+          "latency_s": 1.799,
+          "cost_usd": 0.000494,
+          "tokens": 629
+        },
+        "r08": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking for a summary of a postmortem report, which can be found and summarised by the knowledge specialist.",
+          "latency_s": 1.945,
+          "cost_usd": 0.000642,
+          "tokens": 688
+        },
+        "r09": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking a policy-related question about hotel caps, which would typically be found in internal documents or a knowledge base.",
+          "latency_s": 1.778,
+          "cost_usd": 0.000439,
+          "tokens": 612
+        },
+        "r10": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking about an internal company policy regarding refund approvals, which can be found in the knowledge base.",
+          "latency_s": 1.842,
+          "cost_usd": 0.000454,
+          "tokens": 618
+        },
+        "r11": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a financial fundamental (P/E ratio) for Microsoft, which is handled by the finance specialist.",
+          "latency_s": 2.445,
+          "cost_usd": 0.000789,
+          "tokens": 747
+        },
+        "r12": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for financial data (quarterly revenue) for a specific company, which is handled by the finance specialist.",
+          "latency_s": 1.732,
+          "cost_usd": 0.000448,
+          "tokens": 612
+        },
+        "r13": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for news about a specific stock (AMD), which falls under the 'finance' specialist's capabilities for market news.",
+          "latency_s": 1.867,
+          "cost_usd": 0.000506,
+          "tokens": 631
+        },
+        "r14": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to add a row to a Google Sheet, which is handled by the 'sheets' specialist.",
+          "latency_s": 1.534,
+          "cost_usd": 0.000378,
+          "tokens": 592
+        },
+        "r15": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user wants to open a spreadsheet and extract information about open roles, which can be handled by the sheets specialist.",
+          "latency_s": 1.74,
+          "cost_usd": 0.000353,
+          "tokens": 574
+        },
+        "r16": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to summarise an article from a URL, and the 'web' specialist can read web pages.",
+          "latency_s": 1.741,
+          "cost_usd": 0.000392,
+          "tokens": 596
+        },
+        "r17": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking for specific, up-to-date information about the EU AI Act enforcement dates, which requires web research.",
+          "latency_s": 1.823,
+          "cost_usd": 0.000602,
+          "tokens": 673
+        },
+        "r18": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for alternatives to a product and their pricing pages, which requires web research.",
+          "latency_s": 1.529,
+          "cost_usd": 0.000418,
+          "tokens": 600
+        },
+        "r19": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to summarise an attached PDF contract and list specific clauses from it, which the 'files' specialist can do.",
+          "latency_s": 1.666,
+          "cost_usd": 0.000467,
+          "tokens": 625
+        },
+        "r20": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to extract information from an attached image file, which the 'files' specialist can handle.",
+          "latency_s": 1.716,
+          "cost_usd": 0.000454,
+          "tokens": 625
+        },
+        "r21": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking what the model can do, and the assistant agent can explain its capabilities.",
+          "latency_s": 1.63,
+          "cost_usd": 0.000411,
+          "tokens": 592
+        },
+        "r22": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to rewrite a sentence to sound more formal, which is a writing task best handled by the assistant agent.",
+          "latency_s": 1.772,
+          "cost_usd": 0.000455,
+          "tokens": 623
+        },
+        "r23": {
+          "plan": [],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is expressing gratitude, so no further action or specialist is needed.",
+          "latency_s": 1.729,
+          "cost_usd": 0.000467,
+          "tokens": 618
+        },
+        "r24": {
+          "plan": [
+            "sql",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "First, use SQL to query the top 5 customers by revenue. Then, use the Sheets specialist to add this information to the Pipeline sheet.",
+          "latency_s": 2.162,
+          "cost_usd": 0.000707,
+          "tokens": 721
+        },
+        "r25": {
+          "plan": [
+            "finance",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to retrieve financial data (Apple's EPS) and then record it in a Google Sheet.",
+          "latency_s": 1.869,
+          "cost_usd": 0.000576,
+          "tokens": 665
+        },
+        "r26": {
+          "plan": [
+            "files",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to import leads from a CSV attachment and append them to a Google Sheet, which requires reading the attachment and then updating the sheet.",
+          "latency_s": 2.132,
+          "cost_usd": 0.000644,
+          "tokens": 701
+        },
+        "r27": {
+          "plan": [
+            "files",
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user wants to check a document (SLA) and then draft a reply based on that information.",
+          "latency_s": 1.737,
+          "cost_usd": 0.000467,
+          "tokens": 626
+        },
+        "r28": {
+          "plan": [
+            "finance",
+            "sql",
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user wants to compare Datadog's revenue growth with the company's own revenue growth from the CRM, requiring financial data, SQL database access, and a general assistant for comparison.",
+          "latency_s": 2.455,
+          "cost_usd": 0.000848,
+          "tokens": 780
+        },
+        "r29": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The user's request is too vague to determine which specialist is needed.",
+          "latency_s": 1.638,
+          "cost_usd": 0.000435,
+          "tokens": 598
+        },
+        "r30": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The request is too vague to determine which specialist is needed.",
+          "latency_s": 1.752,
+          "cost_usd": 0.000438,
+          "tokens": 603
+        }
+      },
+      {
+        "r01": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a count and sum of 'open deals', which requires querying a database.",
+          "latency_s": 1.731,
+          "cost_usd": 0.000413,
+          "tokens": 600
+        },
+        "r02": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking to query customer data based on order history, which requires accessing and filtering an SQL database.",
+          "latency_s": 1.708,
+          "cost_usd": 0.000409,
+          "tokens": 599
+        },
+        "r03": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to list overdue invoices with customer names and amounts, which requires querying a SQL database.",
+          "latency_s": 1.671,
+          "cost_usd": 0.000369,
+          "tokens": 586
+        },
+        "r04": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to retrieve customer data by revenue, which is stored in the company's SQL databases.",
+          "latency_s": 1.611,
+          "cost_usd": 0.000412,
+          "tokens": 596
+        },
+        "r05": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking to count new customers, which requires querying a database.",
+          "latency_s": 1.665,
+          "cost_usd": 0.000436,
+          "tokens": 603
+        },
+        "r06": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking a question about the company's refund policy, which is likely stored in the knowledge base.",
+          "latency_s": 1.758,
+          "cost_usd": 0.000446,
+          "tokens": 606
+        },
+        "r07": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The user is asking about a past meeting decision, which would likely be found in internal documents or notes accessible via the knowledge base.",
+          "latency_s": 1.723,
+          "cost_usd": 0.00044,
+          "tokens": 607
+        },
+        "r08": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The user is asking to summarise a postmortem report, which is likely stored in the knowledge base. However, the confidence is low because the request is asking for a summary, but the knowledge agent is for searching, not summarising. It's unclear if the knowledge agent can summarise or if it will just retrieve the document.",
+          "latency_s": 2.052,
+          "cost_usd": 0.00055,
+          "tokens": 651
+        },
+        "r09": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking for a specific policy (hotel cap) which would likely be found in internal documents or a knowledge base.",
+          "latency_s": 1.743,
+          "cost_usd": 0.000466,
+          "tokens": 623
+        },
+        "r10": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.8,
+          "reasoning": "The user is asking about an internal company policy or process, which would be found in the knowledge base.",
+          "latency_s": 1.63,
+          "cost_usd": 0.000419,
+          "tokens": 604
+        },
+        "r11": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a financial fundamental (P/E ratio) of Microsoft, which falls under the finance specialist's capabilities.",
+          "latency_s": 1.808,
+          "cost_usd": 0.000499,
+          "tokens": 631
+        },
+        "r12": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for financial data (quarterly revenue) for a specific company (NVIDIA), which is handled by the finance specialist.",
+          "latency_s": 1.571,
+          "cost_usd": 0.000438,
+          "tokens": 608
+        },
+        "r13": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for market news about a specific stock, which the 'finance' specialist can provide.",
+          "latency_s": 1.525,
+          "cost_usd": 0.000441,
+          "tokens": 605
+        },
+        "r14": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to add a row to a Google Sheet, which is handled by the 'sheets' specialist.",
+          "latency_s": 1.838,
+          "cost_usd": 0.000493,
+          "tokens": 638
+        },
+        "r15": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user wants to open a spreadsheet and extract information from it, which the 'sheets' specialist can handle.",
+          "latency_s": 1.761,
+          "cost_usd": 0.00035,
+          "tokens": 573
+        },
+        "r16": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to summarize an article from a URL, which requires the 'web' specialist to read the web page.",
+          "latency_s": 1.746,
+          "cost_usd": 0.000405,
+          "tokens": 601
+        },
+        "r17": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The user is asking for upcoming enforcement dates of the EU AI Act, which requires up-to-date information that can be found via web search.",
+          "latency_s": 1.724,
+          "cost_usd": 0.00051,
+          "tokens": 636
+        },
+        "r18": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking for alternatives to a product and wants links to pricing pages, which requires web research.",
+          "latency_s": 1.608,
+          "cost_usd": 0.00043,
+          "tokens": 605
+        },
+        "r19": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to summarise an attached PDF contract and list specific clauses, which the 'files' specialist can do.",
+          "latency_s": 1.984,
+          "cost_usd": 0.000579,
+          "tokens": 670
+        },
+        "r20": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to extract information from an attached invoice image, which the 'files' specialist can do.",
+          "latency_s": 1.701,
+          "cost_usd": 0.000451,
+          "tokens": 624
+        },
+        "r21": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking a general question about what the system can do, which is a task for the assistant agent.",
+          "latency_s": 1.677,
+          "cost_usd": 0.000443,
+          "tokens": 605
+        },
+        "r22": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user wants to rewrite a message, which is a pure writing task best handled by the assistant specialist.",
+          "latency_s": 1.842,
+          "cost_usd": 0.00048,
+          "tokens": 633
+        },
+        "r23": {
+          "plan": [],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is expressing gratitude and no further action is required.",
+          "latency_s": 1.844,
+          "cost_usd": 0.000474,
+          "tokens": 621
+        },
+        "r24": {
+          "plan": [
+            "sql",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to query the top customers by revenue from a database and then add this information to a Google Sheet.",
+          "latency_s": 2.081,
+          "cost_usd": 0.000709,
+          "tokens": 722
+        },
+        "r25": {
+          "plan": [
+            "finance",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to retrieve Apple's latest EPS, which requires the 'finance' specialist, and then update a spreadsheet, which requires the 'sheets' specialist.",
+          "latency_s": 1.928,
+          "cost_usd": 0.000563,
+          "tokens": 660
+        },
+        "r26": {
+          "plan": [
+            "files",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to import leads from a CSV attachment and append them to a Google Sheet. The 'files' specialist can read the CSV, and the 'sheets' specialist can append the data to the specified sheet.",
+          "latency_s": 1.826,
+          "cost_usd": 0.000526,
+          "tokens": 654
+        },
+        "r27": {
+          "plan": [
+            "knowledge",
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user needs to find information about service credits in the SLA and then draft a reply based on that information.",
+          "latency_s": 2.049,
+          "cost_usd": 0.000577,
+          "tokens": 670
+        },
+        "r28": {
+          "plan": [
+            "finance",
+            "sql"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The request asks to compare external financial data (Datadog's revenue growth) with internal company data (our revenue growth from the CRM).",
+          "latency_s": 2.839,
+          "cost_usd": 0.001005,
+          "tokens": 843
+        },
+        "r29": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.1,
+          "reasoning": "The request is too vague to determine which specialist is needed.",
+          "latency_s": 1.628,
+          "cost_usd": 0.00045,
+          "tokens": 604
+        },
+        "r30": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The request is too vague to determine which specialist is needed.",
+          "latency_s": 1.883,
+          "cost_usd": 0.000431,
+          "tokens": 600
+        }
+      },
+      {
+        "r01": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for aggregated data from the company's deals, which requires querying the SQL database.",
+          "latency_s": 1.74,
+          "cost_usd": 0.000441,
+          "tokens": 611
+        },
+        "r02": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to filter customers based on their order history, which requires querying the company's SQL database.",
+          "latency_s": 1.92,
+          "cost_usd": 0.000403,
+          "tokens": 597
+        },
+        "r03": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to list records from a database with specific filtering criteria, which is a core capability of the SQL specialist.",
+          "latency_s": 1.972,
+          "cost_usd": 0.000532,
+          "tokens": 651
+        },
+        "r04": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to identify top customers by revenue, which requires querying the company's SQL database.",
+          "latency_s": 1.817,
+          "cost_usd": 0.00044,
+          "tokens": 607
+        },
+        "r05": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to query a database for the number of new customers who signed up in May.",
+          "latency_s": 1.771,
+          "cost_usd": 0.000434,
+          "tokens": 602
+        },
+        "r06": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking a question about the company's refund policy, which can be found in the knowledge base.",
+          "latency_s": 1.999,
+          "cost_usd": 0.000408,
+          "tokens": 591
+        },
+        "r07": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking a question about a past meeting, which suggests retrieving information from indexed documents or notes.",
+          "latency_s": 1.578,
+          "cost_usd": 0.000434,
+          "tokens": 605
+        },
+        "r08": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking to summarise a postmortem, which is a document likely stored in the knowledge base.",
+          "latency_s": 1.696,
+          "cost_usd": 0.000434,
+          "tokens": 605
+        },
+        "r09": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking for a specific policy (hotel cap) which would be found in internal knowledge base documents.",
+          "latency_s": 1.793,
+          "cost_usd": 0.000446,
+          "tokens": 615
+        },
+        "r10": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking about an internal company policy, which would be stored in the knowledge base.",
+          "latency_s": 1.64,
+          "cost_usd": 0.000441,
+          "tokens": 613
+        },
+        "r11": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a financial fundamental (P/E ratio) for Microsoft, which is handled by the finance specialist.",
+          "latency_s": 1.733,
+          "cost_usd": 0.000437,
+          "tokens": 606
+        },
+        "r12": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for financial data (quarterly revenue) for a specific company, which is handled by the 'finance' specialist.",
+          "latency_s": 2.107,
+          "cost_usd": 0.000468,
+          "tokens": 620
+        },
+        "r13": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for news about AMD stock, which falls under the finance specialist's capabilities for market news.",
+          "latency_s": 1.854,
+          "cost_usd": 0.000454,
+          "tokens": 610
+        },
+        "r14": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to add a row to a Google Sheet, which is handled by the 'sheets' specialist.",
+          "latency_s": 1.68,
+          "cost_usd": 0.000378,
+          "tokens": 592
+        },
+        "r15": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user wants to open a spreadsheet and identify open roles, which can be done by the 'sheets' specialist.",
+          "latency_s": 1.523,
+          "cost_usd": 0.000383,
+          "tokens": 586
+        },
+        "r16": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to summarise an article from a URL, and the 'web' specialist can read web pages and summarise them.",
+          "latency_s": 1.547,
+          "cost_usd": 0.000412,
+          "tokens": 604
+        },
+        "r17": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 0.9,
+          "reasoning": "The user is asking for specific enforcement dates of a recent regulation, which requires up-to-date web research.",
+          "latency_s": 1.801,
+          "cost_usd": 0.000457,
+          "tokens": 615
+        },
+        "r18": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for alternatives to a product and their pricing, which requires web search and reading web pages.",
+          "latency_s": 1.673,
+          "cost_usd": 0.00045,
+          "tokens": 613
+        },
+        "r19": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to summarise an attached PDF contract and extract specific information from it, which the 'files' specialist can do.",
+          "latency_s": 1.658,
+          "cost_usd": 0.000432,
+          "tokens": 611
+        },
+        "r20": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking to extract information from an attached invoice, which is an image file. The 'files' specialist can read and summarise information from attachments.",
+          "latency_s": 1.544,
+          "cost_usd": 0.000421,
+          "tokens": 612
+        },
+        "r21": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking a general question about what the system can do, which the 'assistant' agent is designed to explain.",
+          "latency_s": 1.812,
+          "cost_usd": 0.000458,
+          "tokens": 611
+        },
+        "r22": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to rewrite a sentence to sound more formal, which is a writing task best handled by the assistant.",
+          "latency_s": 1.844,
+          "cost_usd": 0.000475,
+          "tokens": 631
+        },
+        "r23": {
+          "plan": [],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is expressing thanks and concluding the conversation, so no agents are needed.",
+          "latency_s": 2.047,
+          "cost_usd": 0.000567,
+          "tokens": 658
+        },
+        "r24": {
+          "plan": [
+            "sql",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The `sql` agent will identify the top customers by revenue, and the `sheets` agent will then add this data to the Pipeline sheet.",
+          "latency_s": 2.295,
+          "cost_usd": 0.000827,
+          "tokens": 769
+        },
+        "r25": {
+          "plan": [
+            "finance",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to retrieve Apple's latest EPS and then record it in a Google Sheet.",
+          "latency_s": 2.11,
+          "cost_usd": 0.000618,
+          "tokens": 682
+        },
+        "r26": {
+          "plan": [
+            "files",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to import a CSV attachment and append its contents to a Google Sheet. The 'files' specialist can read the CSV, and the 'sheets' specialist can append the data.",
+          "latency_s": 2.044,
+          "cost_usd": 0.000574,
+          "tokens": 673
+        },
+        "r27": {
+          "plan": [
+            "knowledge",
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to find information in the SLA and then draft a reply based on that information.",
+          "latency_s": 1.774,
+          "cost_usd": 0.000552,
+          "tokens": 660
+        },
+        "r28": {
+          "plan": [
+            "finance",
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to compare Datadog's revenue growth with the company's own revenue growth, requiring financial data and internal database access respectively.",
+          "latency_s": 2.529,
+          "cost_usd": 0.000765,
+          "tokens": 747
+        },
+        "r29": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The request is too vague to determine which specialist is needed.",
+          "latency_s": 1.686,
+          "cost_usd": 0.000427,
+          "tokens": 595
+        },
+        "r30": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The request is too vague to determine which specialist is needed.",
+          "latency_s": 1.692,
+          "cost_usd": 0.000408,
+          "tokens": 591
+        }
+      }
+    ],
+    "gemini-3.1-flash-lite": [
+      {
+        "r01": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying the company's database to count open deals and sum their values.",
+          "latency_s": 1.537,
+          "cost_usd": 0.000194,
+          "tokens": 562
+        },
+        "r02": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying the database for customer order history to identify those who haven't ordered in the last 90 days.",
+          "latency_s": 1.312,
+          "cost_usd": 0.000206,
+          "tokens": 571
+        },
+        "r03": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying the SQL database to identify and list overdue invoices based on specific criteria.",
+          "latency_s": 1.304,
+          "cost_usd": 0.000195,
+          "tokens": 566
+        },
+        "r04": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires aggregating revenue data from the database to identify top customers.",
+          "latency_s": 1.59,
+          "cost_usd": 0.000187,
+          "tokens": 554
+        },
+        "r05": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request asks for a count of records from a database, which falls under the SQL specialist's scope.",
+          "latency_s": 1.627,
+          "cost_usd": 0.000199,
+          "tokens": 559
+        },
+        "r06": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking about company policy, which is best retrieved from the knowledge base.",
+          "latency_s": 1.239,
+          "cost_usd": 0.000191,
+          "tokens": 553
+        },
+        "r07": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for information from past meetings, which is stored in the company's knowledge base.",
+          "latency_s": 1.524,
+          "cost_usd": 0.000198,
+          "tokens": 561
+        },
+        "r08": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a summary of a specific internal document (postmortem). The knowledge base is the appropriate place to search for this information.",
+          "latency_s": 1.96,
+          "cost_usd": 0.00021,
+          "tokens": 569
+        },
+        "r09": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The hotel cap policy is likely stored in internal documentation or company policies which the knowledge agent can search.",
+          "latency_s": 1.674,
+          "cost_usd": 0.000198,
+          "tokens": 566
+        },
+        "r10": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request asks for company policy regarding refund approval thresholds, which would be stored in the knowledge base.",
+          "latency_s": 1.355,
+          "cost_usd": 0.000198,
+          "tokens": 566
+        },
+        "r11": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a specific financial metric (P/E ratio) for Microsoft (MSFT), which is handled by the finance specialist.",
+          "latency_s": 1.646,
+          "cost_usd": 0.00021,
+          "tokens": 569
+        },
+        "r12": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for specific financial data (quarterly revenue) for a public company (NVDA).",
+          "latency_s": 1.761,
+          "cost_usd": 0.000198,
+          "tokens": 563
+        },
+        "r13": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for recent news about a specific stock, which falls under the 'finance' specialist's domain.",
+          "latency_s": 1.19,
+          "cost_usd": 0.000201,
+          "tokens": 561
+        },
+        "r14": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to add a new row to a specific Google Sheet ('Leads'), which is the primary function of the 'sheets' specialist.",
+          "latency_s": 1.244,
+          "cost_usd": 0.000213,
+          "tokens": 580
+        },
+        "r15": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to retrieve information from a specific spreadsheet ('Hiring tracker') to identify open roles.",
+          "latency_s": 1.324,
+          "cost_usd": 0.000197,
+          "tokens": 562
+        },
+        "r16": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants a summary of a specific web article.",
+          "latency_s": 1.162,
+          "cost_usd": 0.000185,
+          "tokens": 560
+        },
+        "r17": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The EU AI Act's enforcement dates are current, factual information best retrieved via a web search.",
+          "latency_s": 1.068,
+          "cost_usd": 0.000197,
+          "tokens": 561
+        },
+        "r18": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for research on alternative software products, which requires searching the web for information and pricing links.",
+          "latency_s": 1.19,
+          "cost_usd": 0.0002,
+          "tokens": 564
+        },
+        "r19": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants a summary and specific information extracted from an attached PDF document, which is the primary function of the 'files' specialist.",
+          "latency_s": 1.345,
+          "cost_usd": 0.000209,
+          "tokens": 575
+        },
+        "r20": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for information (total amount and due date) from an attached image file. The 'files' agent is capable of reading and extracting information from attachments.",
+          "latency_s": 1.201,
+          "cost_usd": 0.000221,
+          "tokens": 588
+        },
+        "r21": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking a general introductory question about my capabilities.",
+          "latency_s": 1.23,
+          "cost_usd": 0.000183,
+          "tokens": 548
+        },
+        "r22": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a rewriting task, which falls under the 'assistant' specialist.",
+          "latency_s": 1.229,
+          "cost_usd": 0.000196,
+          "tokens": 569
+        },
+        "r23": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is expressing gratitude and closing the conversation, so the assistant should provide a polite closing.",
+          "latency_s": 1.076,
+          "cost_usd": 0.000195,
+          "tokens": 559
+        },
+        "r24": {
+          "plan": [
+            "sql",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires retrieving sales data from the database and then writing it to a specific sheet.",
+          "latency_s": 1.074,
+          "cost_usd": 0.000201,
+          "tokens": 570
+        },
+        "r25": {
+          "plan": [
+            "finance",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to retrieve the financial data first, then perform an update to a Google Sheet.",
+          "latency_s": 1.41,
+          "cost_usd": 0.0002,
+          "tokens": 566
+        },
+        "r26": {
+          "plan": [
+            "files",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to extract the data from the CSV attachment first, and then append that data to the specified Google Sheet.",
+          "latency_s": 1.184,
+          "cost_usd": 0.00021,
+          "tokens": 581
+        },
+        "r27": {
+          "plan": [
+            "knowledge",
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to search the knowledge base for SLA terms regarding service credits, then have the assistant draft a reply based on that information.",
+          "latency_s": 1.297,
+          "cost_usd": 0.000214,
+          "tokens": 579
+        },
+        "r28": {
+          "plan": [
+            "finance",
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to fetch Datadog's latest revenue growth from the finance specialist and our own revenue growth from the CRM database using the sql specialist.",
+          "latency_s": 1.194,
+          "cost_usd": 0.00022,
+          "tokens": 585
+        },
+        "r29": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.2,
+          "reasoning": "The request is too ambiguous to determine which specialist is needed.",
+          "latency_s": 1.696,
+          "cost_usd": 0.000241,
+          "tokens": 583
+        },
+        "r30": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The request is too vague to determine which specialist is needed.",
+          "latency_s": 1.718,
+          "cost_usd": 0.00023,
+          "tokens": 579
+        }
+      },
+      {
+        "r01": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request asks for a count and sum of data stored in a database (open deals), which is a task for the SQL specialist.",
+          "latency_s": 1.537,
+          "cost_usd": 0.000208,
+          "tokens": 571
+        },
+        "r02": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying the database to find customers based on their order history, which is a task for the SQL specialist.",
+          "latency_s": 1.25,
+          "cost_usd": 0.000203,
+          "tokens": 569
+        },
+        "r03": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying the SQL database to identify and list specific records (overdue invoices) based on defined criteria (more than 30 days old).",
+          "latency_s": 1.922,
+          "cost_usd": 0.000215,
+          "tokens": 579
+        },
+        "r04": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying the company's database to identify customers ranked by revenue for the current quarter.",
+          "latency_s": 1.23,
+          "cost_usd": 0.000196,
+          "tokens": 560
+        },
+        "r05": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a count of new customer signups in a specific month, which requires querying a database.",
+          "latency_s": 1.402,
+          "cost_usd": 0.0002,
+          "tokens": 560
+        },
+        "r06": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for information about the company's refund policy, which should be stored in the knowledge base.",
+          "latency_s": 1.272,
+          "cost_usd": 0.0002,
+          "tokens": 559
+        },
+        "r07": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for information from past meetings, which should be stored in the knowledge base.",
+          "latency_s": 1.42,
+          "cost_usd": 0.000195,
+          "tokens": 559
+        },
+        "r08": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires retrieving and summarizing information from internal documents regarding a specific incident (EU ingestion outage).",
+          "latency_s": 1.548,
+          "cost_usd": 0.000195,
+          "tokens": 559
+        },
+        "r09": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The hotel cap for business travel is likely defined in internal company policies, which can be retrieved using the knowledge base.",
+          "latency_s": 1.3,
+          "cost_usd": 0.000202,
+          "tokens": 569
+        },
+        "r10": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The company's refund approval policy should be documented in the knowledge base.",
+          "latency_s": 1.146,
+          "cost_usd": 0.00019,
+          "tokens": 561
+        },
+        "r11": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a specific financial metric (P/E ratio) for Microsoft (MSFT).",
+          "latency_s": 1.055,
+          "cost_usd": 0.000198,
+          "tokens": 561
+        },
+        "r12": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request asks for specific financial data (NVIDIA's quarterly revenue) which is available through the finance specialist.",
+          "latency_s": 1.878,
+          "cost_usd": 0.000201,
+          "tokens": 565
+        },
+        "r13": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for recent news about a specific stock (AMD), which is the primary function of the finance specialist.",
+          "latency_s": 1.183,
+          "cost_usd": 0.000201,
+          "tokens": 561
+        },
+        "r14": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to add a specific row to a Google Sheet named 'Leads'.",
+          "latency_s": 1.085,
+          "cost_usd": 0.000195,
+          "tokens": 568
+        },
+        "r15": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to retrieve information from a specific spreadsheet ('Hiring tracker') to identify open roles.",
+          "latency_s": 1.434,
+          "cost_usd": 0.000197,
+          "tokens": 562
+        },
+        "r16": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants a summary of a specific web article.",
+          "latency_s": 1.268,
+          "cost_usd": 0.000185,
+          "tokens": 560
+        },
+        "r17": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The EU AI Act's enforcement dates are current information that can be verified via a web search.",
+          "latency_s": 1.414,
+          "cost_usd": 0.000197,
+          "tokens": 561
+        },
+        "r18": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for research on software alternatives to Tableau, which requires an up-to-date web search.",
+          "latency_s": 1.278,
+          "cost_usd": 0.000201,
+          "tokens": 565
+        },
+        "r19": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants a summary and specific information (termination clauses) extracted from an attached PDF document.",
+          "latency_s": 1.149,
+          "cost_usd": 0.000197,
+          "tokens": 567
+        },
+        "r20": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires extracting information from an attached image, which the 'files' specialist is designed to handle.",
+          "latency_s": 1.576,
+          "cost_usd": 0.000201,
+          "tokens": 575
+        },
+        "r21": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking a general question about the capabilities of the assistant.",
+          "latency_s": 1.128,
+          "cost_usd": 0.000186,
+          "tokens": 550
+        },
+        "r22": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a rewriting task, which is a core capability of the assistant agent.",
+          "latency_s": 1.322,
+          "cost_usd": 0.000198,
+          "tokens": 570
+        },
+        "r23": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is expressing gratitude and closing the conversation, so no further action is needed other than a polite closing from the assistant.",
+          "latency_s": 1.561,
+          "cost_usd": 0.000204,
+          "tokens": 565
+        },
+        "r24": {
+          "plan": [
+            "sql",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "Need to query the database for top customers by revenue and then update the specified spreadsheet.",
+          "latency_s": 1.17,
+          "cost_usd": 0.0002,
+          "tokens": 569
+        },
+        "r25": {
+          "plan": [
+            "finance",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to fetch the latest EPS for Apple using the finance agent and then update the specified Google Sheet using the sheets agent.",
+          "latency_s": 1.191,
+          "cost_usd": 0.000211,
+          "tokens": 573
+        },
+        "r26": {
+          "plan": [
+            "files",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to read the CSV attachment to extract the data and then append that data to the specified Google Sheet.",
+          "latency_s": 1.297,
+          "cost_usd": 0.000209,
+          "tokens": 580
+        },
+        "r27": {
+          "plan": [
+            "knowledge",
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to search the knowledge base for the SLA terms regarding service credits, and then use the assistant to draft the reply.",
+          "latency_s": 1.329,
+          "cost_usd": 0.000212,
+          "tokens": 578
+        },
+        "r28": {
+          "plan": [
+            "finance",
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to fetch Datadog's financial data using 'finance' and our internal revenue data from the database using 'sql', then compare them.",
+          "latency_s": 1.212,
+          "cost_usd": 0.000222,
+          "tokens": 586
+        },
+        "r29": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.5,
+          "reasoning": "The request is too ambiguous to determine which specialist is needed.",
+          "latency_s": 1.311,
+          "cost_usd": 0.000235,
+          "tokens": 579
+        },
+        "r30": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The request is too ambiguous to determine which specialist is needed.",
+          "latency_s": 1.222,
+          "cost_usd": 0.000227,
+          "tokens": 577
+        }
+      },
+      {
+        "r01": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for quantitative data (count and sum of values) from a database of deals, which is a task for the SQL specialist.",
+          "latency_s": 1.198,
+          "cost_usd": 0.000211,
+          "tokens": 573
+        },
+        "r02": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying the database for customers based on specific criteria (order date).",
+          "latency_s": 1.182,
+          "cost_usd": 0.000191,
+          "tokens": 561
+        },
+        "r03": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a list of records from a database (invoices) based on a specific criteria (overdue > 30 days).",
+          "latency_s": 1.146,
+          "cost_usd": 0.000213,
+          "tokens": 578
+        },
+        "r04": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying the company database to identify top customers based on revenue for the current quarter.",
+          "latency_s": 1.127,
+          "cost_usd": 0.000195,
+          "tokens": 559
+        },
+        "r05": {
+          "plan": [
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires querying customer signup data from the database.",
+          "latency_s": 1.432,
+          "cost_usd": 0.000182,
+          "tokens": 548
+        },
+        "r06": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for company policy information, which is stored in the knowledge base.",
+          "latency_s": 1.127,
+          "cost_usd": 0.000191,
+          "tokens": 553
+        },
+        "r07": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for information from past meetings, which is stored in the knowledge base.",
+          "latency_s": 1.404,
+          "cost_usd": 0.000193,
+          "tokens": 558
+        },
+        "r08": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request asks for a summary of a specific internal postmortem document, which should be available in the knowledge base.",
+          "latency_s": 1.463,
+          "cost_usd": 0.000201,
+          "tokens": 563
+        },
+        "r09": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The hotel cap policy should be stored in the internal company knowledge base.",
+          "latency_s": 1.753,
+          "cost_usd": 0.000189,
+          "tokens": 560
+        },
+        "r10": {
+          "plan": [
+            "knowledge"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires checking internal company policy regarding refund approval thresholds, which is stored in the knowledge base.",
+          "latency_s": 1.127,
+          "cost_usd": 0.000198,
+          "tokens": 566
+        },
+        "r11": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a specific financial metric (P/E ratio) for Microsoft (MSFT).",
+          "latency_s": 1.731,
+          "cost_usd": 0.000198,
+          "tokens": 561
+        },
+        "r12": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for specific financial data (NVIDIA's quarterly revenue) which the finance specialist can retrieve.",
+          "latency_s": 1.33,
+          "cost_usd": 0.000201,
+          "tokens": 565
+        },
+        "r13": {
+          "plan": [
+            "finance"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for recent news about a specific stock (AMD), which is the primary function of the finance specialist.",
+          "latency_s": 1.197,
+          "cost_usd": 0.000201,
+          "tokens": 561
+        },
+        "r14": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request explicitly asks to add a row to a sheet named \"Leads\" with specific data.",
+          "latency_s": 1.221,
+          "cost_usd": 0.000199,
+          "tokens": 571
+        },
+        "r15": {
+          "plan": [
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants to retrieve information from a specific spreadsheet ('Hiring tracker') to identify open roles.",
+          "latency_s": 1.274,
+          "cost_usd": 0.000197,
+          "tokens": 562
+        },
+        "r16": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants a summary of an article from a provided URL, which requires web access to retrieve and process the content.",
+          "latency_s": 1.361,
+          "cost_usd": 0.000205,
+          "tokens": 573
+        },
+        "r17": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for specific factual information regarding the EU AI Act's enforcement timeline, which requires up-to-date web research.",
+          "latency_s": 1.19,
+          "cost_usd": 0.000208,
+          "tokens": 569
+        },
+        "r18": {
+          "plan": [
+            "web"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for research on software alternatives and their pricing links, which requires web search.",
+          "latency_s": 1.513,
+          "cost_usd": 0.000195,
+          "tokens": 561
+        },
+        "r19": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user wants a summary and specific information extracted from an attached PDF document. The 'files' agent is the appropriate tool for reading and processing attachments.",
+          "latency_s": 1.207,
+          "cost_usd": 0.000213,
+          "tokens": 578
+        },
+        "r20": {
+          "plan": [
+            "files"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires extracting information from an attached image, which the 'files' agent is designed to do.",
+          "latency_s": 1.692,
+          "cost_usd": 0.000201,
+          "tokens": 575
+        },
+        "r21": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking a general introductory question about my capabilities.",
+          "latency_s": 1.219,
+          "cost_usd": 0.000183,
+          "tokens": 548
+        },
+        "r22": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is asking for a rewriting task, which falls under the 'assistant' specialist.",
+          "latency_s": 1.281,
+          "cost_usd": 0.000196,
+          "tokens": 569
+        },
+        "r23": {
+          "plan": [
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The user is expressing gratitude and closing the conversation; no further action is required.",
+          "latency_s": 1.212,
+          "cost_usd": 0.00019,
+          "tokens": 556
+        },
+        "r24": {
+          "plan": [
+            "sql",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to query the database for the top 5 customers by revenue and then append those results to the specified Google Sheet.",
+          "latency_s": 1.286,
+          "cost_usd": 0.000212,
+          "tokens": 577
+        },
+        "r25": {
+          "plan": [
+            "finance",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to fetch the latest EPS for Apple using finance and then update the specific spreadsheet using sheets.",
+          "latency_s": 1.648,
+          "cost_usd": 0.000203,
+          "tokens": 568
+        },
+        "r26": {
+          "plan": [
+            "files",
+            "sheets"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "The request requires reading data from an attached CSV file and then appending that data to a Google Sheet.",
+          "latency_s": 1.742,
+          "cost_usd": 0.000206,
+          "tokens": 578
+        },
+        "r27": {
+          "plan": [
+            "knowledge",
+            "assistant"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to search the knowledge base for the SLA terms regarding service credits, then draft a reply based on those terms.",
+          "latency_s": 1.331,
+          "cost_usd": 0.000211,
+          "tokens": 577
+        },
+        "r28": {
+          "plan": [
+            "finance",
+            "sql"
+          ],
+          "error": null,
+          "confidence": 1.0,
+          "reasoning": "I need to fetch Datadog's latest revenue growth from financial data and then query the internal database for our own revenue growth.",
+          "latency_s": 1.591,
+          "cost_usd": 0.000215,
+          "tokens": 582
+        },
+        "r29": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.5,
+          "reasoning": "The request is too ambiguous to determine which specialist is needed.",
+          "latency_s": 1.382,
+          "cost_usd": 0.000235,
+          "tokens": 579
+        },
+        "r30": {
+          "plan": [],
+          "error": null,
+          "confidence": 0.0,
+          "reasoning": "The request is too ambiguous to determine which specialist is needed.",
+          "latency_s": 1.889,
+          "cost_usd": 0.000224,
+          "tokens": 575
+        }
+      }
+    ]
+  }
+}

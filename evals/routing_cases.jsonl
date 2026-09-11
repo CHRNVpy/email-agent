@@ -1,0 +1,30 @@
+{"id": "r01", "subject": "Pipeline numbers", "body": "How many open deals do we have right now and what is their total value?", "accept": [["sql"]]}
+{"id": "r02", "subject": "Churn risk", "body": "Which customers haven't placed an order in the last 90 days?", "accept": [["sql"]]}
+{"id": "r03", "subject": "Overdue invoices", "body": "Please list invoices that are more than 30 days overdue, with customer names and amounts.", "accept": [["sql"]]}
+{"id": "r04", "subject": "Top customers", "body": "Who are our top 5 customers by revenue this quarter?", "accept": [["sql"]]}
+{"id": "r05", "subject": "Signups", "body": "How many new customers signed up in May?", "accept": [["sql"]]}
+{"id": "r06", "subject": "Refunds", "body": "What is our refund policy for annual plans?", "accept": [["knowledge"]]}
+{"id": "r07", "subject": "Pricing review", "body": "What did we decide in the pricing review meeting in March?", "accept": [["knowledge"]]}
+{"id": "r08", "subject": "Outage", "body": "Can you summarise the postmortem of the EU ingestion outage?", "accept": [["knowledge"]]}
+{"id": "r09", "subject": "Travel to London", "body": "I'm going to London next week — what is the hotel cap per night?", "accept": [["knowledge"]]}
+{"id": "r10", "subject": "Refund approval", "body": "A customer wants a $2,400 refund. Who needs to approve that?", "accept": [["knowledge"]]}
+{"id": "r11", "subject": "MSFT", "body": "What's Microsoft's current P/E ratio?", "accept": [["finance"]]}
+{"id": "r12", "subject": "NVDA revenue", "body": "Show NVIDIA's quarterly revenue for the last 4 quarters.", "accept": [["finance"]]}
+{"id": "r13", "subject": "AMD news", "body": "Any important news about AMD stock this week?", "accept": [["finance"], ["web"]]}
+{"id": "r14", "subject": "Leads", "body": "Add a row to the Leads sheet: Acme Corp, acme.com, Manufacturing, 250 employees.", "accept": [["sheets"]]}
+{"id": "r15", "subject": "Hiring tracker", "body": "Open the Hiring tracker spreadsheet and tell me which roles are still open.", "accept": [["sheets"]]}
+{"id": "r16", "subject": "Article", "body": "Summarise this article for me: https://www.example.com/blog/ai-regulation-update", "accept": [["web"]]}
+{"id": "r17", "subject": "EU AI Act", "body": "What are the upcoming enforcement dates of the EU AI Act?", "accept": [["web"]]}
+{"id": "r18", "subject": "Competitors", "body": "Find three alternatives to Tableau for small teams and link their pricing pages.", "accept": [["web"]]}
+{"id": "r19", "subject": "Contract review", "body": "Please summarise the attached contract and list all termination clauses.", "attachments": ["msa-draft.pdf"], "accept": [["files"]]}
+{"id": "r20", "subject": "Invoice", "body": "What's the total amount on the attached invoice and when is it due?", "attachments": ["invoice-0921.png"], "accept": [["files"]]}
+{"id": "r21", "subject": "Hello", "body": "Hi! What can you help me with?", "accept": [["assistant"]]}
+{"id": "r22", "subject": "Wording", "body": "Rewrite this to sound more formal: hey guys, the report is late again, sorry, will send tmrw.", "accept": [["assistant"]]}
+{"id": "r23", "subject": "Thanks", "body": "Great, thanks a lot — that's all I needed.", "accept": [["assistant"]]}
+{"id": "r24", "subject": "Top customers to sheet", "body": "Get our top 5 customers by revenue this quarter and add them to the Pipeline sheet.", "accept": [["sql", "sheets"]]}
+{"id": "r25", "subject": "EPS tracker", "body": "Get Apple's latest quarterly EPS and put it into the Earnings tracker spreadsheet.", "accept": [["finance", "sheets"]]}
+{"id": "r26", "subject": "Import leads", "body": "Here is a CSV with new leads — please append them all to the Leads sheet.", "attachments": ["leads-june.csv"], "accept": [["files", "sheets"]]}
+{"id": "r27", "subject": "Globex reply", "body": "Check what our SLA says about service credits and draft a short reply to Globex offering the credit.", "accept": [["knowledge"], ["knowledge", "assistant"]]}
+{"id": "r28", "subject": "Market vs us", "body": "Look up Datadog's latest revenue growth and compare it with our own revenue growth from the CRM.", "accept": [["finance", "sql"], ["sql", "finance"], ["web", "sql"], ["sql", "web"]]}
+{"id": "r29", "subject": "Update", "body": "Can you update it?", "accept": [[]]}
+{"id": "r30", "subject": "The thing", "body": "Please do the thing we talked about.", "accept": [[]]}

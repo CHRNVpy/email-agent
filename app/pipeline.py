@@ -1,6 +1,6 @@
 """From a Gmail push notification to a reply in the same thread.
 
-push(historyId) ─► new message ids ─► sender allowed? ─► load email + thread
+push(historyId) or poll ─► new message ids ─► sender allowed? ─► load email + thread
     ─► reply to a paused workflow?  ─► resume it
     ─► subject matches a workflow?  ─► start it
     ─► otherwise                    ─► multi-agent graph
@@ -9,10 +9,11 @@ push(historyId) ─► new message ids ─► sender allowed? ─► load email 
 
 import asyncio
 import logging
+from datetime import datetime
 from email.utils import parseaddr
 from fnmatch import fnmatchcase
 
-from app import dedupe
+from app import dedupe, telemetry
 from app.agents.graph import run_agent
 from app.config import settings
 from app.google import gmail
@@ -37,15 +38,30 @@ async def is_authorized(sender: str) -> bool:
 async def handle_push(history_id: int) -> None:
     async with _fetch_lock:  # history ids must be consumed in order
         message_ids = await asyncio.to_thread(gmail.list_new_message_ids, history_id)
+    await process_messages(message_ids)
+
+
+async def poll_inbox(since: datetime) -> int:
+    """Polling mode (no Pub/Sub, no public URL): handle inbox messages received after `since`."""
+    query = f"in:inbox after:{int(since.timestamp())}"
+    message_ids = await asyncio.to_thread(gmail.search_message_ids, query)
+    return await process_messages(message_ids)
+
+
+async def process_messages(message_ids: list[str]) -> int:
+    """Process each message once, even if it is reported again by a later push or poll."""
+    processed = 0
     for message_id in message_ids:
         if not dedupe.claim(dedupe.make_key("incoming", message_id)):
             continue
+        processed += 1
         try:
             await process_message(message_id)
         except Exception:
             logger.exception("Failed to process message %s", message_id)
         finally:
             dedupe.mark_done(dedupe.make_key("incoming", message_id))
+    return processed
 
 
 async def process_message(message_id: str) -> None:
@@ -66,8 +82,9 @@ async def process_message(message_id: str) -> None:
     set_principal(principal)
     logger.info("Processing %s from %s (model=%s)", message_id, sender, model or settings.default_model)
 
-    with dedupe.scope(f"msg:{email.id}"):
+    with dedupe.scope(f"msg:{email.id}"), telemetry.trace() as trace:
         reply = await answer(email, principal, model)
+    logger.info("Answered %s: %s", message_id, trace.summary())
     if reply:
         await asyncio.to_thread(gmail.send_reply, email, reply)
 

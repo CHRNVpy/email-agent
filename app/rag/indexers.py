@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from datetime import date, datetime
+from pathlib import Path
 
 from sqlalchemy import MetaData, Table, select
 
@@ -66,6 +67,43 @@ async def index_sql_table(spec: RagSqlTable) -> int:
 async def index_sql_tables() -> int:
     await store.ensure_collection()
     return sum([await index_sql_table(spec) for spec in settings.rag_sql_tables])
+
+
+# --- Local files ---------------------------------------------------------------------
+
+LOCAL_SOURCE = "files"
+
+
+def parse_front_matter(text: str) -> tuple[dict[str, str], str]:
+    """Split `---`-delimited `key: value` front matter from a Markdown body."""
+    if not text.startswith("---\n"):
+        return {}, text
+    header, _, body = text[4:].partition("\n---\n")
+    meta = {}
+    for line in header.splitlines():
+        key, sep, value = line.partition(":")
+        if sep:
+            meta[key.strip().lower()] = value.strip().strip('"')
+    return meta, body.strip()
+
+
+def file_to_local_document(path: Path) -> Document:
+    meta, body = parse_front_matter(path.read_text(encoding="utf-8"))
+    raw_date = meta.get("date")
+    return Document(
+        source=LOCAL_SOURCE,
+        source_id=path.stem,
+        title=meta.get("title", path.stem.replace("-", " ").capitalize()),
+        date=f"{raw_date}T00:00:00Z" if raw_date and "T" not in raw_date else raw_date,
+        text=body,
+    )
+
+
+async def index_local_files(directory: Path) -> int:
+    """Index Markdown / text files (with optional `title:` / `date:` front matter)."""
+    await store.ensure_collection()
+    files = sorted(p for p in directory.rglob("*") if p.suffix.lower() in {".md", ".txt"})
+    return await store.upsert_documents([file_to_local_document(p) for p in files])
 
 
 # --- Google Drive -------------------------------------------------------------------

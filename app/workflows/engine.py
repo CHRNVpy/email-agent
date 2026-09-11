@@ -12,8 +12,10 @@ from langgraph.prebuilt import create_react_agent
 
 from app import dedupe
 from app.agents.content import message_text
+from app.agents.prompts import today_line
 from app.db import list_databases, utcnow
 from app.llm import run_chat
+from app.telemetry import ToolTraceCallback
 from app.tools.finance import finance_tools
 from app.tools.sheets import SHEETS_TOOLS
 from app.tools.sql import SQL_TOOLS
@@ -41,7 +43,7 @@ ACTION_GROUPS: dict[str, ActionGroup] = {
     "sql": ActionGroup(SQL_TOOLS, "Inspect the schema before querying; use bind parameters."),
 }
 
-SYSTEM_PROMPT = """You are executing one stage of a multi-stage workflow on behalf of {user}.
+SYSTEM_PROMPT = """You are executing one stage of a multi-stage workflow on behalf of {user}. {today}
 Follow the stage instructions precisely, using the conversation so far as context.
 When the stage asks for an action (send an email, save a file, update a sheet), call the
 matching tool — do not just describe it. Perform each action exactly once; if a tool reports
@@ -82,14 +84,16 @@ def uses_iteration(stage: StageConfig, run: WorkflowRun) -> bool:
 
 async def execute_stage(run: WorkflowRun, prompt: str, scope: str) -> str:
     tools, guidance = tools_for(run.config)
-    messages = [SystemMessage(SYSTEM_PROMPT.format(user=run.user_email, guidance=guidance))]
+    system = SYSTEM_PROMPT.format(user=run.user_email, today=today_line(), guidance=guidance)
+    messages = [SystemMessage(system)]
     for turn in run.history:
         messages.append(AIMessage(turn["content"]) if turn["role"] == "assistant" else HumanMessage(turn["content"]))
     messages.append(HumanMessage(prompt))
 
     async def call(llm):
         agent = create_react_agent(llm, tools)
-        result = await agent.ainvoke({"messages": messages}, config={"recursion_limit": RECURSION_LIMIT})
+        config = {"recursion_limit": RECURSION_LIMIT, "callbacks": [ToolTraceCallback()]}
+        result = await agent.ainvoke({"messages": messages}, config=config)
         return message_text(result["messages"][-1])
 
     with dedupe.scope(scope):

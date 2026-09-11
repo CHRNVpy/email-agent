@@ -18,6 +18,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
 from app.config import settings
+from app.telemetry import UsageCallback
 
 logger = logging.getLogger(__name__)
 
@@ -95,24 +96,61 @@ async def with_key_rotation[T](fn: Callable[[str], Awaitable[T]], *, attempts: i
     raise last_error
 
 
-def chat_model(model: str | None = None, *, api_key: str | None = None, **kwargs) -> BaseChatModel:
+def chat_model(
+    model: str | None = None,
+    *,
+    api_key: str | None = None,
+    thinking_budget: int | None = None,
+    max_output_tokens: int | None = None,
+) -> BaseChatModel:
+    """A chat model with hard limits.
+
+    `thinking_budget` caps Gemini 2.5 reasoning tokens: without it one planning call in the
+    end-to-end eval reasoned for 248 s and ~60k tokens. It is only sent to 2.5 models (the
+    3.x series controls reasoning differently); `max_output_tokens` bounds every model.
+    """
     model = resolve_model(model)
     if is_xai_model(model):
         from langchain_openai import ChatOpenAI
 
         if not settings.xai_api_key:
             raise RuntimeError(f"Model '{model}' needs XAI_API_KEY to be set.")
-        return ChatOpenAI(model=model, api_key=settings.xai_api_key, base_url=XAI_BASE_URL, **kwargs)
+        return ChatOpenAI(
+            model=model,
+            api_key=settings.xai_api_key,
+            base_url=XAI_BASE_URL,
+            max_tokens=max_output_tokens,
+            timeout=settings.llm_timeout_s,
+            callbacks=[UsageCallback(model)],
+        )
+    limits: dict = {"max_output_tokens": max_output_tokens}
+    if thinking_budget is not None and model.startswith("gemini-2.5"):
+        limits["thinking_budget"] = thinking_budget
     # Retries are handled by `with_key_rotation`, so the client must fail fast on 429.
-    return ChatGoogleGenerativeAI(model=model, google_api_key=api_key or key_pool.acquire(), max_retries=0, **kwargs)
+    return ChatGoogleGenerativeAI(
+        model=model,
+        google_api_key=api_key or key_pool.acquire(),
+        max_retries=0,
+        timeout=settings.llm_timeout_s,
+        callbacks=[UsageCallback(model)],
+        **{k: v for k, v in limits.items() if v is not None},
+    )
 
 
-async def run_chat[T](model: str | None, fn: Callable[[BaseChatModel], Awaitable[T]]) -> T:
-    """Run `fn` against a chat model, rotating Gemini keys when needed."""
+async def run_chat[T](model: str | None, fn: Callable[[BaseChatModel], Awaitable[T]], **limits) -> T:
+    """Run `fn` against a chat model, rotating Gemini keys when needed.
+
+    `limits` (thinking_budget, max_output_tokens) go to `chat_model`; the whole call —
+    including multi-step tool loops — is cut off after LLM_TIMEOUT_S seconds.
+    """
     model = resolve_model(model)
+
+    async def attempt(key: str | None) -> T:
+        return await asyncio.wait_for(fn(chat_model(model, api_key=key, **limits)), settings.llm_timeout_s)
+
     if is_xai_model(model):
-        return await fn(chat_model(model))
-    return await with_key_rotation(lambda key: fn(chat_model(model, api_key=key)))
+        return await attempt(None)
+    return await with_key_rotation(attempt)
 
 
 async def run_genai[T](fn: Callable[[genai.Client], Awaitable[T]]) -> T:

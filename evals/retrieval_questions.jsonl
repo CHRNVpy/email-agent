@@ -1,0 +1,29 @@
+{"id": "s01", "type": "single", "question": "What monthly uptime do we guarantee on the Enterprise plan?", "relevant": ["sla"]}
+{"id": "s02", "type": "single", "question": "In which cloud region is data for EU customers stored?", "relevant": ["security-overview"]}
+{"id": "s03", "type": "single", "question": "How long do we keep raw event data?", "relevant": ["data-retention"]}
+{"id": "s04", "type": "single", "question": "What is the hotel limit per night in London?", "relevant": ["travel-policy"]}
+{"id": "s05", "type": "single", "question": "What was the root cause of the EU ingestion outage?", "relevant": ["meeting-2026-05-21-incident"]}
+{"id": "s06", "type": "single", "question": "What is our win rate against Datapulse?", "relevant": ["competitor-analysis"]}
+{"id": "s07", "type": "single", "question": "When will the legacy API v1 be shut down?", "relevant": ["release-notes-2026-04"]}
+{"id": "s08", "type": "single", "question": "How much is the home office stipend?", "relevant": ["remote-work-policy"]}
+{"id": "s09", "type": "single", "question": "Who has to approve a refund of more than $1,000?", "relevant": ["support-playbook"]}
+{"id": "s10", "type": "single", "question": "What is the daily meal allowance when travelling?", "relevant": ["expense-policy"]}
+{"id": "s11", "type": "single", "question": "What happens in the first week of customer onboarding?", "relevant": ["onboarding-guide"]}
+{"id": "s12", "type": "single", "question": "What ARR target did we set for the first half of 2026?", "relevant": ["okrs-2026-h1"]}
+{"id": "s13", "type": "single", "question": "Which channels can anomaly alerts be delivered to?", "relevant": ["product-spec-anomaly-alerts"]}
+{"id": "s14", "type": "single", "question": "Can a customer get money back if they cancel an annual subscription after one month?", "relevant": ["refund-policy"]}
+{"id": "s15", "type": "single", "question": "Is SAML single sign-on available on the Starter plan?", "relevant": ["security-overview"]}
+{"id": "s16", "type": "single", "question": "Which data warehouse connector shipped in June?", "relevant": ["release-notes-2026-06"]}
+{"id": "m01", "type": "multi", "question": "What is the launch timeline of Anomaly Alerts, from beta to general availability?", "relevant": ["product-spec-anomaly-alerts", "release-notes-2026-04", "release-notes-2026-06", "okrs-2026-h1"]}
+{"id": "m02", "type": "multi", "question": "What does the Growth plan cost now and how did its price change this year?", "relevant": ["pricing-policy", "meeting-2026-03-12-pricing"]}
+{"id": "m03", "type": "multi", "question": "What are the rules for hotel and meal spending on business trips?", "relevant": ["travel-policy", "expense-policy"]}
+{"id": "m04", "type": "multi", "question": "What did we offer Globex, and what does our SLA say about service credits?", "relevant": ["meeting-2026-06-18-globex-escalation", "sla"]}
+{"id": "m05", "type": "multi", "question": "What reliability targets do we have and what incidents happened this year?", "relevant": ["sla", "okrs-2026-h1", "meeting-2026-05-21-incident"]}
+{"id": "d01", "type": "date", "question": "What did we decide in meetings this month?", "relevant": ["meeting-2026-06-04-hiring", "meeting-2026-06-18-globex-escalation"]}
+{"id": "d02", "type": "date", "question": "Summarize the meeting notes from March 2026.", "relevant": ["meeting-2026-03-12-pricing"]}
+{"id": "d03", "type": "date", "question": "What changed in the product in April 2026?", "relevant": ["release-notes-2026-04"]}
+{"id": "d04", "type": "date", "question": "Were there any incidents in May?", "relevant": ["meeting-2026-05-21-incident"]}
+{"id": "u01", "type": "unanswerable", "question": "What is our parental leave policy?", "relevant": []}
+{"id": "u02", "type": "unanswerable", "question": "How many people work in our Tokyo office?", "relevant": []}
+{"id": "u03", "type": "unanswerable", "question": "How much does the Datapulse top plan cost?", "relevant": []}
+{"id": "u04", "type": "unanswerable", "question": "What is the Wi-Fi password for the office?", "relevant": []}

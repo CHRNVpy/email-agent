@@ -53,6 +53,7 @@ testpaths = ["tests"]
 filterwarnings = [
     "ignore::PendingDeprecationWarning",
     "ignore:The anyio.abc.BlockingPortal alias:DeprecationWarning",
+    "ignore:Payload indexes have no effect in the local Qdrant:UserWarning",
 ]
 
 [tool.ruff]

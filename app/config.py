@@ -1,5 +1,6 @@
 """Application settings, loaded from environment variables / `.env`."""
 
+import os
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -13,6 +14,7 @@ class SqlDatabase(BaseModel):
     url: str
     description: str = ""
     read_only: bool = False
+    notes: str = ""  # business definitions for text-to-SQL, e.g. "revenue = SUM(orders.amount)"
 
 
 class RagSqlTable(BaseModel):
@@ -31,7 +33,8 @@ CommaList = Annotated[list[str], NoDecode]
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    # ENV_FILE selects another settings file, e.g. ENV_FILE=demo/.env.demo; tests point it at nothing.
+    model_config = SettingsConfigDict(env_file=os.getenv("ENV_FILE", ".env"), env_file_encoding="utf-8", extra="ignore")
 
     # --- Application -------------------------------------------------------
     log_level: str = "INFO"
@@ -52,6 +55,9 @@ class Settings(BaseSettings):
 
     # --- LLM providers -----------------------------------------------------
     default_model: str = "gemini-2.5-flash"
+    router_model: str = ""  # a cheaper model for routing, e.g. gemini-3.1-flash-lite; default_model if empty
+    llm_timeout_s: float = 120.0  # hard cap for one LLM call or tool loop
+    planning_thinking_budget: int = 1024  # reasoning-token cap for routing / SQL planning (Gemini 2.5)
     gemini_api_keys: CommaList = []
     gemini_fallback_api_key: str = ""
     xai_api_key: str = ""
@@ -60,6 +66,7 @@ class Settings(BaseSettings):
     # --- Specialists -------------------------------------------------------
     sql_databases: dict[str, SqlDatabase] = {}
     sql_max_rows: int = 200
+    sql_sample_values: bool = True  # show distinct values of low-cardinality text columns in the schema
     finance_enabled: bool = True
     alpha_vantage_api_key: str = ""
 
@@ -73,6 +80,7 @@ class Settings(BaseSettings):
     rag_chunk_overlap: int = 200
     rag_top_k: int = 8
     rag_score_threshold: float = 0.3
+    rag_title_in_chunks: bool = True
     rag_sql_tables: list[RagSqlTable] = []
 
     # --- Google Drive sync -------------------------------------------------

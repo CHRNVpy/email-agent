@@ -5,6 +5,7 @@ import tempfile
 _tmp = tempfile.mkdtemp(prefix="email-agent-tests-")
 os.environ.update(
     {
+        "ENV_FILE": os.path.join(_tmp, "no.env"),  # never read the developer's local .env
         "DATA_DIR": _tmp,
         "APP_DATABASE_URL": "sqlite+aiosqlite:///:memory:",
         "AGENT_EMAIL": "agent@example.com",
@@ -45,3 +46,15 @@ async def app_db():
     service.invalidate_cache()
     async with app_engine().begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_llm(monkeypatch):
+    """Fail loudly instead of calling Gemini when a test forgets to script the model."""
+
+    def blocked(*args, **kwargs):
+        raise RuntimeError("Tests must not call a real LLM — patch run_chat / run_genai in the test")
+
+    monkeypatch.setattr("app.llm.chat_model", blocked)
+    monkeypatch.setattr("app.llm.embeddings_model", blocked)
+    monkeypatch.setattr("app.llm.genai.Client", blocked)

@@ -14,8 +14,10 @@ import asyncio
 import json
 import logging
 import warnings
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
+from app import telemetry
 from app.config import settings
 from app.permissions import service
 from app.permissions.policy import DEFAULT_PERMISSIONS
@@ -88,6 +90,10 @@ async def cmd_index(args: argparse.Namespace) -> None:
 
     if args.source == "drive":
         chunks = await indexers.index_drive_folders(args.folder or None)
+    elif args.source == "files":
+        if not args.path:
+            raise SystemExit("index files needs a directory: python -m app.cli index files ./docs")
+        chunks = await indexers.index_local_files(Path(args.path))
     else:
         chunks = await indexers.index_sql_tables()
     print(f"Indexed {chunks} chunks into '{settings.qdrant_collection}'")
@@ -111,7 +117,31 @@ async def cmd_ask(args: argparse.Namespace) -> None:
     principal = await service.resolve_principal(args.sender)
     service.set_principal(principal)
     email = IncomingEmail(id="cli", thread_id="cli", sender=args.sender, subject=args.subject, body=args.text)
-    print(await answer(email, principal, args.model))
+    with telemetry.trace() as trace:
+        reply = await answer(email, principal, args.model)
+    print(reply)
+    if args.stats:
+        print("\n---\n" + json.dumps(trace.summary(), indent=2, default=str))
+
+
+async def cmd_poll(args: argparse.Namespace) -> None:
+    """Answer emails by polling the inbox — for local runs without Pub/Sub or a public URL."""
+    from app.pipeline import poll_inbox
+
+    await cmd_init(args)
+    logging.getLogger("app").setLevel(logging.INFO)
+    since = datetime.now(UTC) - timedelta(minutes=args.backlog)
+    print(f"Watching {settings.agent_email} every {args.interval}s (Ctrl+C to stop)")
+    while True:
+        try:
+            handled = await poll_inbox(since)
+            if handled:
+                print(f"Handled {handled} new message(s)")
+        except Exception as exc:  # network hiccups must not stop the loop
+            logging.getLogger(__name__).error("Poll failed: %s", exc)
+        if args.once:
+            return
+        await asyncio.sleep(args.interval)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -141,17 +171,25 @@ def build_parser() -> argparse.ArgumentParser:
     perms.set_defaults(func=cmd_perms)
 
     index = sub.add_parser("index", help="Load sources into the knowledge base")
-    index.add_argument("source", choices=["drive", "sql"])
+    index.add_argument("source", choices=["drive", "sql", "files"])
+    index.add_argument("path", nargs="?", help="Directory with .md/.txt files (for `files`)")
     index.add_argument("--folder", action="append", help="Drive folder id/URL (default: DRIVE_FOLDER_IDS)")
     index.set_defaults(func=cmd_index)
 
     sub.add_parser("workflows", help="List workflows defined in the sheet").set_defaults(func=cmd_workflows)
+
+    poll = sub.add_parser("poll", help="Answer emails by polling the inbox (no Pub/Sub needed)")
+    poll.add_argument("--interval", type=int, default=15, help="Seconds between checks")
+    poll.add_argument("--backlog", type=int, default=0, help="Also handle messages from the last N minutes")
+    poll.add_argument("--once", action="store_true", help="Check once and exit")
+    poll.set_defaults(func=cmd_poll)
 
     ask = sub.add_parser("ask", help="Ask the agent directly, bypassing Gmail")
     ask.add_argument("text")
     ask.add_argument("--sender", default=settings.admin_email or "cli@localhost")
     ask.add_argument("--subject", default="CLI request")
     ask.add_argument("--model")
+    ask.add_argument("--stats", action="store_true", help="Print latency per stage, tokens and cost")
     ask.set_defaults(func=cmd_ask)
     return parser
 

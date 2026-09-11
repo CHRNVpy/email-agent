@@ -13,6 +13,9 @@ htmlcov/
 
 # Secrets & runtime state — never commit
 .env
+.env.*
+!.env.example
+!demo/.env.demo
 credentials.json
 token.json
 data/
@@ -24,3 +27,6 @@ qdrant_storage/
 .cursor/
 .DS_Store
 
+
+# Offline eval plumbing runs (numbers are meaningless)
+evals/results/offline/

@@ -154,6 +154,12 @@ def list_new_message_ids(history_id: int) -> list[str]:
     return ids
 
 
+def search_message_ids(query: str, limit: int = 50) -> list[str]:
+    """Ids of messages matching a Gmail search query, oldest first (used by polling mode)."""
+    response = gmail_service().users().messages().list(userId="me", q=query, maxResults=limit).execute()
+    return [m["id"] for m in reversed(response.get("messages", []))]
+
+
 def get_sender(message_id: str) -> str:
     msg = (
         gmail_service()
@@ -201,6 +207,47 @@ def load_email(message_id: str) -> IncomingEmail | None:
 # --- Sending ------------------------------------------------------------------
 
 
+# Gmail drops most <style> rules, so the rendered Markdown gets inline styles.
+_INLINE_STYLES = {
+    "table": "border-collapse:collapse;margin:12px 0;font-size:14px",
+    "th": "border:1px solid #d0d7de;padding:6px 12px;background:#f6f8fa;text-align:left",
+    "td": "border:1px solid #d0d7de;padding:6px 12px",
+    "pre": "background:#f6f8fa;border:1px solid #d0d7de;border-radius:6px;padding:10px 12px;"
+    "font-size:12px;line-height:1.45;white-space:pre-wrap",
+    "code": "font-family:SFMono-Regular,Consolas,Menlo,monospace",
+    "hr": "border:none;border-top:1px solid #d0d7de;margin:18px 0",
+}
+_TAG = re.compile(r"<(table|th|td|pre|code|hr)(\s[^>]*)?>")
+
+
+def _inline_styles(markup: str) -> str:
+    def add_style(match: re.Match) -> str:
+        tag, attrs = match.group(1), match.group(2) or ""
+        style = _INLINE_STYLES[tag]
+        if 'style="' in attrs:  # e.g. text-align from Markdown table alignment
+            return f"<{tag}{attrs.replace('style="', f'style="{style};', 1)}>"
+        return f'<{tag} style="{style}"{attrs}>'
+
+    return _TAG.sub(add_style, markup)
+
+
+_PRE_BLOCK = re.compile(r"(<pre[^>]*>)(.*?)(</pre>)", re.DOTALL)
+_DOTTED = re.compile(r"(?<=\w)\.(?=\w)")
+
+
+def _no_autolink(markup: str) -> str:
+    """Gmail turns `c.name` / `c.id` in SQL into links (.name and .id are TLDs); a span breaks the match."""
+    return _PRE_BLOCK.sub(lambda m: m.group(1) + _DOTTED.sub("<span>.</span>", m.group(2)) + m.group(3), markup)
+
+
+def render_markdown(body: str) -> str:
+    rendered = _no_autolink(markdown.markdown(body, extensions=["tables", "fenced_code", "sane_lists"]))
+    return (
+        '<html><body><div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f2328">'
+        f"{_inline_styles(rendered)}</div></body></html>"
+    )
+
+
 def build_mime(to: str, subject: str, body: str, cc: str | None = None) -> EmailMessage:
     """Build a multipart message. Markdown bodies are rendered to HTML with a plain-text part."""
     message = EmailMessage()
@@ -214,8 +261,7 @@ def build_mime(to: str, subject: str, body: str, cc: str | None = None) -> Email
         message.add_alternative(body, subtype="html")
     else:
         message.set_content(body)
-        rendered = markdown.markdown(body, extensions=["tables", "fenced_code", "sane_lists"])
-        message.add_alternative(f"<html><body>{rendered}</body></html>", subtype="html")
+        message.add_alternative(render_markdown(body), subtype="html")
     return message
 
 

@@ -17,6 +17,7 @@ from app.google import sheets
 from app.google.auth import get_credentials
 from app.llm import run_genai
 from app.state import JsonState
+from app.telemetry import record_genai_usage
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +150,7 @@ async def extract_pdf_text(pdf: bytes, title: str) -> str:
 
     try:
         response = await run_genai(call)
+        record_genai_usage(PDF_EXTRACTION_MODEL, response)
         return response.text or ""
     except Exception as exc:
         logger.error("PDF extraction failed for %s: %s", title, exc)

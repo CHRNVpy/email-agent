@@ -19,6 +19,7 @@ from app.config import settings
 from app.llm import run_chat
 from app.messages import IncomingEmail
 from app.permissions.service import current_principal
+from app.telemetry import span
 
 logger = logging.getLogger(__name__)
 
@@ -28,19 +29,40 @@ FALLBACK_REPLY = "I'm not sure how to help with this request. Could you describe
 _ROUTER_PROMPT = ChatPromptTemplate.from_messages([("system", prompts.ROUTER), ("human", "{request}")])
 
 
-async def route(state: AgentState) -> dict:
+async def plan_request(state: AgentState) -> tuple[RoutingDecision, list[str]]:
+    """Ask the router LLM for a plan; returns the raw decision and the executable plan."""
     specialists = available_specialists()
 
     async def call(llm):
         chain = _ROUTER_PROMPT | llm.with_structured_output(RoutingDecision)
         return await chain.ainvoke({"specialists": describe(specialists), "request": request_text(state)})
 
-    decision: RoutingDecision = await run_chat(state.model, call)
+    with span("router"):
+        decision: RoutingDecision = await run_chat(
+            settings.router_model or state.model,
+            call,
+            thinking_budget=settings.planning_thinking_budget,
+            # Generous: Gemini 3.x counts its reasoning against this cap, and 2048 truncated the JSON.
+            max_output_tokens=8192,
+        )
     known = {s.name for s in specialists}
     plan = [name for name in decision.agents if name in known]
+    if decision.confidence < settings.router_confidence_threshold:
+        plan = []
     logger.info("Route %s (confidence %.2f): %s", plan, decision.confidence, decision.reasoning)
+    return decision, plan
 
-    if not plan or decision.confidence < settings.router_confidence_threshold:
+
+ROUTING_FAILED_REPLY = "Sorry — I couldn't process this request right now. Please try again in a few minutes."
+
+
+async def route(state: AgentState) -> dict:
+    try:
+        decision, plan = await plan_request(state)
+    except Exception:
+        logger.exception("Routing failed")
+        return {"plan": [], "response": ROUTING_FAILED_REPLY}
+    if not plan:
         return {"plan": [], "response": decision.clarification or FALLBACK_REPLY}
     return {"plan": plan}
 
@@ -51,7 +73,8 @@ def make_node(specialist: Specialist):
             output = f"(You don't have permission to use the {specialist.name} capability.)"
         else:
             try:
-                output = await specialist.run(state)
+                with span(f"agent.{specialist.name}"):
+                    output = await specialist.run(state)
             except Exception:
                 logger.exception("Specialist %s failed", specialist.name)
                 output = f"(The {specialist.name} step failed due to an internal error.)"

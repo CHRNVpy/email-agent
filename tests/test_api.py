@@ -54,3 +54,22 @@ def test_drive_push_requires_known_channel(client):
     drive.watch_state.save({"channel_id": "chan-1"})
     response = client.post("/drive/push", headers={"X-Goog-Channel-ID": "chan-1", "X-Goog-Resource-State": "sync"})
     assert response.json() == {"status": "sync"}
+
+
+async def test_poll_processes_each_message_once(monkeypatch, data_dir):
+    from datetime import UTC, datetime
+
+    from app import pipeline
+
+    queries, handled = [], []
+    monkeypatch.setattr(pipeline.gmail, "search_message_ids", lambda q: queries.append(q) or ["m1", "m2"])
+
+    async def fake_process(message_id):
+        handled.append(message_id)
+
+    monkeypatch.setattr(pipeline, "process_message", fake_process)
+    since = datetime(2026, 9, 1, tzinfo=UTC)
+    assert await pipeline.poll_inbox(since) == 2
+    assert await pipeline.poll_inbox(since) == 0  # already handled
+    assert handled == ["m1", "m2"]
+    assert queries[0] == f"in:inbox after:{int(since.timestamp())}"

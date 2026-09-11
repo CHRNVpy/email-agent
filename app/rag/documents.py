@@ -54,8 +54,8 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
     return chunks
 
 
-def chunk_document(document: Document, size: int, overlap: int) -> list[Chunk]:
-    header = f"{document.title}\n\n" if document.title else ""
+def chunk_document(document: Document, size: int, overlap: int, *, with_title: bool = True) -> list[Chunk]:
+    header = f"{document.title}\n\n" if document.title and with_title else ""
     pieces = chunk_text(document.text, size, overlap)
     return [
         Chunk(

@@ -9,23 +9,23 @@ partial configuration.
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import date
 
 from google.genai import types
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langgraph.prebuilt import create_react_agent
 
 from app.agents import prompts
 from app.agents.content import genai_parts, human_content, message_text
+from app.agents.sql_agent import run_sql
 from app.agents.state import AgentState
 from app.config import settings
 from app.db import list_databases
 from app.llm import gemini_model, run_chat, run_genai
 from app.permissions.policy import Principal
 from app.rag.retriever import retrieve_context
+from app.telemetry import ToolTraceCallback, record_genai_usage
 from app.tools.finance import finance_tools
 from app.tools.sheets import SHEETS_TOOLS
-from app.tools.sql import SQL_TOOLS
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +44,31 @@ class Specialist:
 # --- Helpers ------------------------------------------------------------------------
 
 
+TOOL_REMINDER = (
+    "You answered without calling any tool. Do not answer from memory: use the tools to get "
+    "the real data or perform the requested action, then answer from their results."
+)
+UNGROUNDED_REPLY = "I couldn't get real data for this request, so I won't guess. Please rephrase it or try again later."
+
+
+def _used_tools(messages: list) -> bool:
+    return any(isinstance(m, ToolMessage) for m in messages)
+
+
 async def run_tool_agent(state: AgentState, system_prompt: str, tools: list) -> str:
-    """Run a ReAct tool-calling loop and return the final answer."""
+    """Run a ReAct tool-calling loop. An answer that used no tool at all is not trusted."""
     messages = [SystemMessage(prompts.for_email(system_prompt)), HumanMessage(human_content(state))]
+    config = {"recursion_limit": RECURSION_LIMIT, "callbacks": [ToolTraceCallback()]}
 
     async def call(llm):
         agent = create_react_agent(llm, tools)
-        result = await agent.ainvoke({"messages": messages}, config={"recursion_limit": RECURSION_LIMIT})
+        result = await agent.ainvoke({"messages": messages}, config=config)
+        if not _used_tools(result["messages"]):
+            logger.warning("Specialist answered without tools; retrying with a reminder")
+            retry = [*result["messages"], HumanMessage(TOOL_REMINDER)]
+            result = await agent.ainvoke({"messages": retry}, config=config)
+            if not _used_tools(result["messages"][len(retry) :]):
+                return UNGROUNDED_REPLY
         return message_text(result["messages"][-1])
 
     return await run_chat(state.model, call)
@@ -89,11 +107,7 @@ async def assistant(state: AgentState) -> str:
 
 
 async def sql(state: AgentState) -> str:
-    databases = "\n".join(
-        f"- {name}{' (read-only)' if db.read_only else ''}: {db.description or 'no description'}"
-        for name, db in list_databases().items()
-    )
-    return await run_tool_agent(state, prompts.SQL.format(databases=databases), SQL_TOOLS)
+    return await run_sql(state)
 
 
 async def knowledge(state: AgentState) -> str:
@@ -105,7 +119,7 @@ async def knowledge(state: AgentState) -> str:
 
 
 async def finance(state: AgentState) -> str:
-    return await run_tool_agent(state, prompts.FINANCE.format(today=date.today().isoformat()), finance_tools())
+    return await run_tool_agent(state, prompts.FINANCE, finance_tools())
 
 
 async def sheets(state: AgentState) -> str:
@@ -118,26 +132,32 @@ async def web(state: AgentState) -> str:
         tools=[types.Tool(google_search=types.GoogleSearch()), types.Tool(url_context=types.UrlContext())],
     )
 
-    async def call(client):
-        return await client.aio.models.generate_content(
-            model=gemini_model(state.model), contents=genai_parts(state), config=config
-        )
+    model = gemini_model(state.model)
 
-    return add_citations(await run_genai(call))
+    async def call(client):
+        return await client.aio.models.generate_content(model=model, contents=genai_parts(state), config=config)
+
+    response = await run_genai(call)
+    record_genai_usage(model, response)
+    return add_citations(response)
 
 
 async def files(state: AgentState) -> str:
     if not state.email.attachments:
         return "The email has no attachments to analyse."
 
+    model = gemini_model(state.model)
+
     async def call(client):
         return await client.aio.models.generate_content(
-            model=gemini_model(state.model),
+            model=model,
             contents=genai_parts(state),
             config=types.GenerateContentConfig(system_instruction=prompts.for_email(prompts.FILES)),
         )
 
-    return (await run_genai(call)).text or ""
+    response = await run_genai(call)
+    record_genai_usage(model, response)
+    return response.text or ""
 
 
 SPECIALISTS: list[Specialist] = [

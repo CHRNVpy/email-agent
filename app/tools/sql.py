@@ -2,6 +2,7 @@
 
 import json
 import re
+import time
 from typing import Any
 
 from langchain_core.tools import tool
@@ -55,7 +56,23 @@ def _params(params: Any) -> dict:
     return params
 
 
-def describe_schema_sync(conn) -> str:
+SAMPLE_VALUES_MAX = 8  # list the values of text columns with at most this many distinct values
+
+
+def _sample_values(conn, table: str, column: str) -> list[str] | None:
+    """Distinct values of a low-cardinality text column — tells the model that status is 'open'/'paid'."""
+    quote = conn.dialect.identifier_preparer.quote
+    query = text(f"SELECT DISTINCT {quote(column)} FROM {quote(table)} LIMIT {SAMPLE_VALUES_MAX + 1}")
+    try:
+        values = [row[0] for row in conn.execute(query) if row[0] is not None]
+    except Exception:  # e.g. a dialect without LIMIT; the schema is still useful without samples
+        return None
+    if not values or len(values) > SAMPLE_VALUES_MAX or any(len(str(v)) > 40 for v in values):
+        return None
+    return sorted(map(str, values))
+
+
+def describe_schema_sync(conn, sample_values: bool = True) -> str:
     inspector = inspect(conn)
     lines = []
     for table in inspector.get_table_names():
@@ -74,8 +91,75 @@ def describe_schema_sync(conn) -> str:
                 notes.append("not null")
             if column["name"] in foreign:
                 notes.append(f"-> {foreign[column['name']]}")
+            if sample_values and _is_text(column) and column["name"] not in primary:
+                values = _sample_values(conn, table, column["name"])
+                if values:
+                    notes.append("values: " + " | ".join(f"'{v}'" for v in values))
             lines.append(f"  - {column['name']}: {', '.join(notes)}")
     return "\n".join(lines)
+
+
+def _is_text(column: dict) -> bool:
+    try:
+        return column["type"].python_type is str
+    except (NotImplementedError, AttributeError):  # exotic / dialect-specific types
+        return False
+
+
+# --- Execution (shared by the SQL specialist and the workflow tools) -----------------
+
+
+def is_write(statement: str) -> bool:
+    return _normalise(statement).lower().startswith(("insert", "update", "delete"))
+
+
+_schema_cache: dict[str, tuple[float, str]] = {}
+SCHEMA_CACHE_SECONDS = 600
+
+
+async def get_schema(database: str) -> str:
+    """Tables, columns, keys, sample values and the configured business notes (cached for 10 minutes)."""
+    require(f"sql:{database}:read")
+    cached = _schema_cache.get(database)
+    if cached and time.monotonic() - cached[0] < SCHEMA_CACHE_SECONDS:
+        return cached[1]
+    async with data_engine(database).connect() as conn:
+        schema = await conn.run_sync(describe_schema_sync, settings.sql_sample_values)
+    notes = get_database(database).notes
+    if notes:
+        schema += f"\nNotes: {notes}"
+    _schema_cache[database] = (time.monotonic(), schema)
+    return schema
+
+
+async def select_rows(database: str, query: str, params: Any = None) -> dict:
+    """Run a guarded read-only query; returns {"row_count", "rows"[, "note"]}."""
+    require(f"sql:{database}:read")
+    statement = check_read_only(query)
+    async with data_engine(database).connect() as conn:
+        result = await conn.execute(text(statement), _params(params))
+        rows = [dict(r) for r in result.mappings().fetchmany(settings.sql_max_rows + 1)]
+    payload: dict[str, Any] = {
+        "row_count": min(len(rows), settings.sql_max_rows),
+        "rows": rows[: settings.sql_max_rows],
+    }
+    if len(rows) > settings.sql_max_rows:
+        payload["note"] = f"Result truncated to {settings.sql_max_rows} rows; refine the query."
+    return payload
+
+
+async def execute_write(database: str, query: str, params: Any = None) -> dict:
+    """Run a guarded INSERT/UPDATE/DELETE; returns {"rows_affected"}."""
+    require(f"sql:{database}:write")
+    if get_database(database).read_only:
+        raise PermissionError(f"Database '{database}' is configured as read-only.")
+    statement = check_write(query)
+    async with data_engine(database).begin() as conn:
+        result = await conn.execute(text(statement), _params(params))
+    return {"rows_affected": result.rowcount}
+
+
+# --- LangChain tools (used by workflow stages with the `sql` action) ------------------
 
 
 @tool
@@ -90,9 +174,7 @@ def list_sql_databases() -> str:
 @tool
 async def get_sql_schema(database: str) -> str:
     """Return tables, columns, types and keys of a database. Always call before writing SQL."""
-    require(f"sql:{database}:read")
-    async with data_engine(database).connect() as conn:
-        return await conn.run_sync(describe_schema_sync)
+    return await get_schema(database)
 
 
 @tool
@@ -104,16 +186,7 @@ async def run_sql_select(database: str, query: str, params: dict | None = None) 
         query: One SQL statement using :name placeholders, e.g. "SELECT * FROM orders WHERE id = :id".
         params: JSON object with values for the placeholders, e.g. {"id": 42}.
     """
-    require(f"sql:{database}:read")
-    statement = check_read_only(query)
-    async with data_engine(database).connect() as conn:
-        result = await conn.execute(text(statement), _params(params))
-        rows = [dict(r) for r in result.mappings().fetchmany(settings.sql_max_rows + 1)]
-    truncated = len(rows) > settings.sql_max_rows
-    payload = {"row_count": min(len(rows), settings.sql_max_rows), "rows": rows[: settings.sql_max_rows]}
-    if truncated:
-        payload["note"] = f"Result truncated to {settings.sql_max_rows} rows; refine the query."
-    return json.dumps(payload, indent=2, default=str)
+    return json.dumps(await select_rows(database, query, params), indent=2, default=str)
 
 
 @tool
@@ -127,13 +200,7 @@ async def run_sql_write(database: str, query: str, params: dict | None = None) -
         query: One statement using :name placeholders. UPDATE/DELETE must have a WHERE clause.
         params: JSON object with values for the placeholders.
     """
-    require(f"sql:{database}:write")
-    if get_database(database).read_only:
-        raise PermissionError(f"Database '{database}' is configured as read-only.")
-    statement = check_write(query)
-    async with data_engine(database).begin() as conn:
-        result = await conn.execute(text(statement), _params(params))
-    return json.dumps({"rows_affected": result.rowcount})
+    return json.dumps(await execute_write(database, query, params))
 
 
 SQL_TOOLS = [list_sql_databases, get_sql_schema, run_sql_select, run_sql_write]

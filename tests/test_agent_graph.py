@@ -30,7 +30,7 @@ def routed(monkeypatch):
     """Patch the router LLM to return a given decision, and use fake specialists."""
     decision = {}
 
-    async def fake_run_chat(model, fn):
+    async def fake_run_chat(model, fn, **limits):
         return RoutingDecision(**decision)
 
     monkeypatch.setattr(graph, "run_chat", fake_run_chat)
@@ -69,3 +69,14 @@ async def test_permission_denied_step_is_reported(routed):
         assert "don't have permission" in await graph.run_agent(EMAIL)
     finally:
         reset_principal(token)
+
+
+async def test_router_failure_gives_a_polite_reply(monkeypatch):
+    from app.agents import graph as graph_module
+
+    async def broken(state):
+        raise RuntimeError("2 validation errors for RoutingDecision")
+
+    monkeypatch.setattr(graph_module, "plan_request", broken)
+    result = await graph_module.route(AgentState(email=IncomingEmail(id="1", thread_id="t", sender="a@example.com")))
+    assert result == {"plan": [], "response": graph_module.ROUTING_FAILED_REPLY}
