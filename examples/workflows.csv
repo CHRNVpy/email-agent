@@ -1,0 +1,8 @@
+workflow,model,actions,source_research,source_style,source_tickers,source_companies,source_kb,stage_1,stage_2,stage_3,stage_4
+Weekly Market Brief,,"email, drive",https://drive.google.com/drive/folders/YOUR_RESEARCH_FOLDER_ID,https://docs.google.com/document/d/YOUR_STYLE_GUIDE_DOC_ID/edit,"iteration=TRUE; NVDA
+AMD
+TSM",,,Summarise the main themes in these research notes: {source_research},For {source_tickers}: list the 3 most important developments this week with a one-line implication each.,"Here is the outline of this week's brief, built from the notes above. Reply with changes or ""OK"" to continue. {await_reply}","Write the final brief (max 600 words) following this style guide: {source_style}. Then email it to research-team@yourcompany.com with the subject ""Weekly Market Brief"" and save it as a Google Doc in https://drive.google.com/drive/folders/YOUR_OUTPUT_FOLDER_ID"
+Lead Enrichment,,"sheets, email",,,,"iteration=TRUE; Acme Corp
+Globex
+Initech",,"Find the website, industry and approximate headcount of {source_companies}.","Append one row per company to the ""Leads"" worksheet of https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID with the columns Company, Website, Industry, Headcount.",,
+FAQ Draft,gemini-2.5-pro,email,,,,,query: customer questions about pricing and refunds,Group the recurring questions in {source_kb} into themes.,Write a customer-facing FAQ with one answer per theme. Mark anything the knowledge base does not answer as TODO.,,

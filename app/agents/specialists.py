@@ -1,0 +1,195 @@
+"""Specialist agents. Each one is a node of the agent graph.
+
+A specialist declares when it is available (e.g. only if SQL databases are
+configured) and whether the acting user may use it. The router only ever sees
+specialists that are available, so the system degrades gracefully with a
+partial configuration.
+"""
+
+import logging
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from datetime import date
+
+from google.genai import types
+from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.prebuilt import create_react_agent
+
+from app.agents import prompts
+from app.agents.content import genai_parts, human_content, message_text
+from app.agents.state import AgentState
+from app.config import settings
+from app.db import list_databases
+from app.llm import gemini_model, run_chat, run_genai
+from app.permissions.policy import Principal
+from app.rag.retriever import retrieve_context
+from app.tools.finance import finance_tools
+from app.tools.sheets import SHEETS_TOOLS
+from app.tools.sql import SQL_TOOLS
+
+logger = logging.getLogger(__name__)
+
+RECURSION_LIMIT = 25
+
+
+@dataclass(frozen=True)
+class Specialist:
+    name: str
+    description: str
+    run: Callable[[AgentState], Awaitable[str]]
+    is_available: Callable[[], bool] = lambda: True
+    is_allowed: Callable[[Principal], bool] = lambda principal: True
+
+
+# --- Helpers ------------------------------------------------------------------------
+
+
+async def run_tool_agent(state: AgentState, system_prompt: str, tools: list) -> str:
+    """Run a ReAct tool-calling loop and return the final answer."""
+    messages = [SystemMessage(prompts.for_email(system_prompt)), HumanMessage(human_content(state))]
+
+    async def call(llm):
+        agent = create_react_agent(llm, tools)
+        result = await agent.ainvoke({"messages": messages}, config={"recursion_limit": RECURSION_LIMIT})
+        return message_text(result["messages"][-1])
+
+    return await run_chat(state.model, call)
+
+
+async def run_plain(state: AgentState, system_prompt: str) -> str:
+    async def call(llm):
+        messages = [SystemMessage(prompts.for_email(system_prompt)), HumanMessage(human_content(state))]
+        answer = await llm.ainvoke(messages)
+        return message_text(answer)
+
+    return await run_chat(state.model, call)
+
+
+def describe(specialists: list[Specialist]) -> str:
+    return "\n".join(f"- {s.name}: {s.description}" for s in specialists)
+
+
+def add_citations(response) -> str:
+    """Append numbered source links from Google Search grounding metadata."""
+    text = response.text or ""
+    metadata = response.candidates[0].grounding_metadata if response.candidates else None
+    chunks = (metadata.grounding_chunks or []) if metadata else []
+    sources = [(c.web.title or c.web.uri, c.web.uri) for c in chunks if c.web and c.web.uri]
+    if not sources:
+        return text
+    links = "\n".join(f"{i}. [{title}]({uri})" for i, (title, uri) in enumerate(sources, 1))
+    return f"{text}\n\n**Sources**\n{links}"
+
+
+# --- Specialists ----------------------------------------------------------------------
+
+
+async def assistant(state: AgentState) -> str:
+    return await run_plain(state, prompts.ASSISTANT.format(specialists=describe(available_specialists())))
+
+
+async def sql(state: AgentState) -> str:
+    databases = "\n".join(
+        f"- {name}{' (read-only)' if db.read_only else ''}: {db.description or 'no description'}"
+        for name, db in list_databases().items()
+    )
+    return await run_tool_agent(state, prompts.SQL.format(databases=databases), SQL_TOOLS)
+
+
+async def knowledge(state: AgentState) -> str:
+    query = state.email.latest_text or state.email.subject
+    context = await retrieve_context(query, model=state.model)
+    if not context:
+        return "I could not find anything relevant in the knowledge base for this request."
+    return await run_plain(state, prompts.KNOWLEDGE.format(context=context))
+
+
+async def finance(state: AgentState) -> str:
+    return await run_tool_agent(state, prompts.FINANCE.format(today=date.today().isoformat()), finance_tools())
+
+
+async def sheets(state: AgentState) -> str:
+    return await run_tool_agent(state, prompts.SHEETS, SHEETS_TOOLS)
+
+
+async def web(state: AgentState) -> str:
+    config = types.GenerateContentConfig(
+        system_instruction=prompts.for_email(prompts.WEB),
+        tools=[types.Tool(google_search=types.GoogleSearch()), types.Tool(url_context=types.UrlContext())],
+    )
+
+    async def call(client):
+        return await client.aio.models.generate_content(
+            model=gemini_model(state.model), contents=genai_parts(state), config=config
+        )
+
+    return add_citations(await run_genai(call))
+
+
+async def files(state: AgentState) -> str:
+    if not state.email.attachments:
+        return "The email has no attachments to analyse."
+
+    async def call(client):
+        return await client.aio.models.generate_content(
+            model=gemini_model(state.model),
+            contents=genai_parts(state),
+            config=types.GenerateContentConfig(system_instruction=prompts.for_email(prompts.FILES)),
+        )
+
+    return (await run_genai(call)).text or ""
+
+
+SPECIALISTS: list[Specialist] = [
+    Specialist(
+        "assistant",
+        "General questions, writing and summarising the email thread; explains what this agent can do.",
+        assistant,
+    ),
+    Specialist(
+        "sql",
+        "Queries and updates the company SQL databases: listing, filtering, aggregating records.",
+        sql,
+        is_available=lambda: bool(list_databases()),
+        is_allowed=lambda p: any(p.can(f"sql:{name}:read") for name in list_databases()),
+    ),
+    Specialist(
+        "knowledge",
+        "Semantic search over the knowledge base (indexed documents, notes, reports) with citations.",
+        knowledge,
+        is_allowed=lambda p: p.can("knowledge:read"),
+    ),
+    Specialist(
+        "finance",
+        "Stock quotes, company fundamentals, financial statements, earnings, transcripts and market news.",
+        finance,
+        is_available=lambda: settings.finance_enabled,
+        is_allowed=lambda p: p.can("finance:read"),
+    ),
+    Specialist(
+        "sheets",
+        "Reads and updates Google Sheets: find spreadsheets, read tables, update cells, append rows.",
+        sheets,
+        is_allowed=lambda p: p.can("sheets:read"),
+    ),
+    Specialist(
+        "web",
+        "Up-to-date web research with Google Search and reading web pages from links.",
+        web,
+        is_allowed=lambda p: p.can("web:search"),
+    ),
+    Specialist(
+        "files",
+        "Reads email attachments (PDF, images, documents, audio): extract, summarise, compare.",
+        files,
+        is_allowed=lambda p: p.can("files:read"),
+    ),
+]
+
+
+def available_specialists() -> list[Specialist]:
+    return [s for s in SPECIALISTS if s.is_available()]
+
+
+def get_specialist(name: str) -> Specialist:
+    return next(s for s in SPECIALISTS if s.name == name)

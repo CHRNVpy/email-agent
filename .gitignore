@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets & runtime state — never commit
+.env
+credentials.json
+token.json
+data/
+qdrant_storage/
+
+# IDE / tooling
+.idea/
+.vscode/
+.cursor/
+.DS_Store
+
