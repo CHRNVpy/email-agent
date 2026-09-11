@@ -50,6 +50,7 @@ include = ["app*"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+pythonpath = ["."]  # tests import the evals/ and demo/ folders, which are not installed packages
 filterwarnings = [
     "ignore::PendingDeprecationWarning",
     "ignore:The anyio.abc.BlockingPortal alias:DeprecationWarning",
