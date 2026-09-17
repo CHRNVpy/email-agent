@@ -91,8 +91,20 @@ async def run_request(request_id: str, subject: str, body: str, model: str | Non
         "tokens": sum(t["in"] + t["out"] for t in summary["tokens"].values()),
         "cost_usd": summary["cost_usd"],
         "tools": summary["tools"],
+        "grounding": summary["grounding"],
         "reply": reply,
         "error": error,
+    }
+
+
+def grounding_stats(results: list[dict]) -> dict:
+    """Replies whose numbers were checked, and how many had numbers not found in the data."""
+    checked = [r for r in results if r.get("grounding")]
+    return {
+        "checked": len(checked),
+        "flagged": sum(any(g["unverified"] for g in r["grounding"]) for r in checked),
+        "still_flagged": sum(any(g["final"] for g in r["grounding"]) for r in checked),
+        "fallbacks": sum(any(g["fallback"] for g in r["grounding"]) for r in checked),
     }
 
 
@@ -100,6 +112,7 @@ def aggregate(results: list[dict]) -> dict:
     ok = [r for r in results if not r["error"]]
     costs = [r["cost_usd"] for r in ok if r["cost_usd"] is not None]
     return {
+        "grounding": grounding_stats(ok),
         "requests": len(results),
         "errors": len(results) - len(ok),
         "latency_p50_s": percentile([r["total_s"] for r in ok], 50),
@@ -138,6 +151,22 @@ def to_markdown(meta: dict, results: list[dict], totals: dict) -> str:
             f"| {request_id} | {plan} | {f(median['total_s'], 1)} s | {f(median['spans'].get('router', 0), 1)} s | "
             f"{f(specialists, 1)} s | {median['tokens']} | {cost} |"
         )
+    g = totals["grounding"]
+    out += [
+        "",
+        f"**Number grounding** — {g['checked']} replies had their numbers checked against the data of the same run. "
+        f"{g['flagged']} contained numbers not found in it and were retried; after the retry {g['still_flagged']} "
+        f"still did ({g['fallbacks']} SQL replies replaced by the returned rows).",
+    ]
+    flagged = [
+        f"- `{r['id']}` ({c['agent']}): {', '.join(c['unverified'])}"
+        + (f" → still {', '.join(c['final'])}" if c["final"] else " → fixed by the retry")
+        for r in results
+        for c in r.get("grounding", [])
+        if c["unverified"]
+    ]
+    if flagged:
+        out += ["", *flagged]
     unanswerable = next((r for r in results if r["id"] == "kb-unanswerable" and not r["error"]), None)
     if unanswerable:
         excerpt = " ".join(unanswerable["reply"].split())[:300]

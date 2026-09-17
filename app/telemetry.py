@@ -48,6 +48,7 @@ class Trace:
     spans: dict[str, list[float]] = field(default_factory=lambda: defaultdict(list))
     usage: dict[str, Usage] = field(default_factory=lambda: defaultdict(Usage))
     tools: list[dict[str, Any]] = field(default_factory=list)
+    grounding: list[dict[str, Any]] = field(default_factory=list)
     finished: float | None = None
 
     @property
@@ -75,6 +76,7 @@ class Trace:
             },
             "cost_usd": round(cost, 6) if cost is not None else None,
             "tools": self.tools,
+            "grounding": self.grounding,
         }
 
 
@@ -136,6 +138,17 @@ def record_tool(name: str, input: Any, *, output: Any = None, error: str | None 
         text = str(output)
         entry["output"] = text if len(text) <= TOOL_OUTPUT_PREVIEW else text[:TOOL_OUTPUT_PREVIEW] + "…"
     current.tools.append(entry)
+
+
+def record_grounding(
+    agent: str, unverified: list[str], final: list[str], *, retried: bool, fallback: bool = False
+) -> None:
+    """Result of a number-grounding check: numbers not found in the data, before and after a retry."""
+    current = _current.get()
+    if current is not None:
+        current.grounding.append(
+            {"agent": agent, "unverified": unverified, "final": final, "retried": retried, "fallback": fallback}
+        )
 
 
 class UsageCallback(BaseCallbackHandler):

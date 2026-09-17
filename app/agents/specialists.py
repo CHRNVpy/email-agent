@@ -11,11 +11,11 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from google.genai import types
-from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.prebuilt import create_react_agent
 
-from app.agents import prompts
-from app.agents.content import genai_parts, human_content, message_text
+from app.agents import grounding, prompts
+from app.agents.content import genai_parts, human_content, message_text, request_text
 from app.agents.sql_agent import run_sql
 from app.agents.state import AgentState
 from app.config import settings
@@ -23,7 +23,7 @@ from app.db import list_databases
 from app.llm import gemini_model, run_chat, run_genai
 from app.permissions.policy import Principal
 from app.rag.retriever import retrieve_context
-from app.telemetry import ToolTraceCallback, record_genai_usage
+from app.telemetry import ToolTraceCallback, record_genai_usage, record_grounding
 from app.tools.finance import finance_tools
 from app.tools.sheets import SHEETS_TOOLS
 
@@ -55,8 +55,22 @@ def _used_tools(messages: list) -> bool:
     return any(isinstance(m, ToolMessage) for m in messages)
 
 
-async def run_tool_agent(state: AgentState, system_prompt: str, tools: list) -> str:
-    """Run a ReAct tool-calling loop. An answer that used no tool at all is not trusted."""
+def _grounding_evidence(state: AgentState, *sources: str) -> set[float]:
+    """Numbers the model legitimately had: the request (incl. earlier specialists' results), today, data."""
+    return grounding.evidence_numbers(request_text(state), prompts.today_line(), *sources)
+
+
+def _tool_outputs(messages: list) -> list[str]:
+    return [message_text(m) for m in messages if isinstance(m, ToolMessage)]
+
+
+async def run_tool_agent(state: AgentState, system_prompt: str, tools: list, *, name: str = "tools") -> str:
+    """Run a ReAct tool-calling loop.
+
+    An answer that used no tool at all is not trusted. An answer whose numbers are not in the tool
+    results gets one retry with the list of those numbers; if they still don't match, the answer is
+    kept (derived values such as growth rates are legitimate here) and the mismatch is recorded.
+    """
     messages = [SystemMessage(prompts.for_email(system_prompt)), HumanMessage(human_content(state))]
     config = {"recursion_limit": RECURSION_LIMIT, "callbacks": [ToolTraceCallback()]}
 
@@ -69,16 +83,43 @@ async def run_tool_agent(state: AgentState, system_prompt: str, tools: list) -> 
             result = await agent.ainvoke({"messages": retry}, config=config)
             if not _used_tools(result["messages"][len(retry) :]):
                 return UNGROUNDED_REPLY
-        return message_text(result["messages"][-1])
+
+        reply = message_text(result["messages"][-1])
+        unverified = grounding.unverified_numbers(reply, _grounding_evidence(state, *_tool_outputs(result["messages"])))
+        final = unverified
+        if unverified:
+            logger.warning("%s reply has numbers not in the tool results %s; retrying", name, unverified)
+            retry = [*result["messages"], HumanMessage(grounding.feedback(unverified))]
+            result = await agent.ainvoke({"messages": retry}, config=config)
+            reply = message_text(result["messages"][-1])
+            final = grounding.unverified_numbers(reply, _grounding_evidence(state, *_tool_outputs(result["messages"])))
+        record_grounding(name, unverified, final, retried=bool(unverified))
+        return reply
 
     return await run_chat(state.model, call)
 
 
-async def run_plain(state: AgentState, system_prompt: str) -> str:
+async def run_plain(
+    state: AgentState, system_prompt: str, *, grounding_sources: list[str] | None = None, name: str = "plain"
+) -> str:
+    """One LLM call. With `grounding_sources`, numbers in the reply must appear in those sources
+    (or in the request); otherwise the reply is retried once and the result is recorded."""
+
     async def call(llm):
         messages = [SystemMessage(prompts.for_email(system_prompt)), HumanMessage(human_content(state))]
-        answer = await llm.ainvoke(messages)
-        return message_text(answer)
+        reply = message_text(await llm.ainvoke(messages))
+        if grounding_sources is None:
+            return reply
+        evidence = _grounding_evidence(state, *grounding_sources)
+        unverified = grounding.unverified_numbers(reply, evidence)
+        final = unverified
+        if unverified:
+            logger.warning("%s reply has numbers not in its sources %s; retrying", name, unverified)
+            retry = [*messages, AIMessage(reply), HumanMessage(grounding.feedback(unverified))]
+            reply = message_text(await llm.ainvoke(retry))
+            final = grounding.unverified_numbers(reply, evidence)
+        record_grounding(name, unverified, final, retried=bool(unverified))
+        return reply
 
     return await run_chat(state.model, call)
 
@@ -103,7 +144,10 @@ def add_citations(response) -> str:
 
 
 async def assistant(state: AgentState) -> str:
-    return await run_plain(state, prompts.ASSISTANT.format(specialists=describe(available_specialists())))
+    prompt = prompts.ASSISTANT.format(specialists=describe(available_specialists()))
+    if state.results:  # e.g. drafting an email from SQL results: its numbers must come from them
+        return await run_plain(state, prompt, grounding_sources=[], name="assistant")
+    return await run_plain(state, prompt)
 
 
 async def sql(state: AgentState) -> str:
@@ -115,15 +159,17 @@ async def knowledge(state: AgentState) -> str:
     context = await retrieve_context(query, model=state.model)
     if not context:
         return "I could not find anything relevant in the knowledge base for this request."
-    return await run_plain(state, prompts.KNOWLEDGE.format(context=context))
+    return await run_plain(
+        state, prompts.KNOWLEDGE.format(context=context), grounding_sources=[context], name="knowledge"
+    )
 
 
 async def finance(state: AgentState) -> str:
-    return await run_tool_agent(state, prompts.FINANCE, finance_tools())
+    return await run_tool_agent(state, prompts.FINANCE, finance_tools(), name="finance")
 
 
 async def sheets(state: AgentState) -> str:
-    return await run_tool_agent(state, prompts.SHEETS, SHEETS_TOOLS)
+    return await run_tool_agent(state, prompts.SHEETS, SHEETS_TOOLS, name="sheets")
 
 
 async def web(state: AgentState) -> str:

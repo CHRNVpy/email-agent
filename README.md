@@ -115,6 +115,11 @@ sequenceDiagram
   therefore returns only a structured plan. Code runs it and gives the model one repair
   attempt if the SQL fails. The reply is written from the returned rows, and the executed
   query is appended by code. Other tool agents may not answer without calling a tool.
+- **Number grounding.** Calling the tool isn't enough: every number in a reply is checked in code
+  against the data of the same run (query rows, tool results, retrieved documents), allowing for
+  formatting and rounding (`$147,410` ≈ `147409.9`, `23.45%` ≈ `0.2345`). A reply with unmatched numbers
+  is retried once with the list of those numbers. If an SQL reply still does not match, it is
+  replaced by the rows rendered by code; other agents keep the answer and the mismatch is recorded.
 - **Safe SQL.** One statement per call. Reads accept only SELECT, WITH, SHOW, DESCRIBE and
   EXPLAIN. UPDATE and DELETE need a WHERE clause, databases can be marked read-only,
   permissions are checked per database and results are capped. For real deployments,
@@ -158,11 +163,17 @@ so `ROUTER_MODEL=gemini-3.1-flash-lite` is the recommended setting. `gemini-2.5-
 in this run and 0.97 in the previous one. Most of its misses are clear requests that got an empty
 plan in one run out of three; the agent then asks a clarifying question instead of guessing.
 
-**End to end.** 9 typical requests × 3 runs through router → specialists → reply with
-`gemini-2.5-flash` ([full report](evals/results/e2e.md)). The median request takes **7.5 s** and
-costs **$0.0027**; the most expensive of the 27 cost $0.0096. Greetings and simple
-knowledge-base answers take 4.1–4.5 s. A two-step `sql → assistant` chain takes 14–21 s, mostly
-because the SQL answer step varies between 2.4 and 12.9 s on identical data.
+**End to end.** 9 typical requests × 3 runs through router → specialists → reply, with
+`gemini-2.5-flash` for every step including routing ([full report](evals/results/e2e.md)). The
+median request takes **6.6 s** and costs **$0.0026**. The slowest of the 27 took 11.9 s and the
+most expensive cost $0.0054. Greetings and simple knowledge-base answers take 3.3–4.6 s. A two-step
+`sql → assistant` chain takes 9.4–11.9 s.
+
+**Number grounding** in the same run: 21 replies from SQL, the knowledge base, finance and chained
+steps had their ~180 numbers checked against the data of the run. None needed a retry, so the check
+added no model calls and no latency. The run found no misquotes, which is not proof there are
+none; unit and agent tests cover detection, retry and the fallback to code-rendered rows. Web
+answers are not checked, because the search results stay on Google's side.
 
 ### What the evals caught
 
@@ -173,8 +184,9 @@ because the SQL answer step varies between 2.4 and 12.9 s on identical data.
 | `status = 'overdue'` returned 0 rows, because the real values are `open` and `paid` | The schema shown to the model now lists the values of low-cardinality columns, and databases can carry business `notes` ("revenue = SUM(orders.amount)") |
 | Unanswerable questions score 0.75–0.82 and relevant documents 0.74–0.81, so **no score threshold can separate them** | The answer step abstains ("the knowledge base has nothing on parental leave"), and the e2e eval checks it |
 | A hard date filter can drop an answer when the date belongs to the content rather than the document | Soft filter: documents from the time window are ranked first and the rest follow. The LLM date parser only runs when a question contains a time expression, which skips the 1.6–1.9 s call for 17 of the 29 eval questions |
-| 1 of 27 requests spent **248 s and $0.15** in open-ended model reasoning | Reasoning budget for planning calls, output-token caps and a 120 s timeout on every LLM call. In the rerun the slowest of 27 requests took 21 s and the most expensive cost $0.0096 |
+| 1 of 27 requests spent **248 s and $0.15** in open-ended model reasoning | Reasoning budget for planning calls, output-token caps and a 120 s timeout on every LLM call. In the latest run the slowest of 27 requests took 11.9 s and the most expensive cost $0.0054 |
 | With a 2,048-token output cap, `gemini-3.1-flash-lite` returned invalid routing JSON (probably because its reasoning counts against the cap) | Higher caps for structured calls, after which it made 0 errors in 90 decisions. A routing failure now returns a polite retry message, and the eval records it as a per-email error instead of dropping the model |
+| After the model called its tool, nothing stopped it from misquoting the result in the reply (raised in a review of this project) | Number grounding: every number in a reply is checked in code against the data of the same run, with one retry and, for SQL, a fallback to the rows themselves |
 | All three router models tended to add an extra `assistant` step | A routing rule, and a separate `ROUTER_MODEL`. With both, `gemini-3.1-flash-lite` routed all 90 eval emails correctly |
 
 ## Quick start
@@ -264,7 +276,7 @@ item, and `{await_reply}` pauses the run until the user answers. See
 app/
 ├── main.py              FastAPI: /gmail/push, /drive/push, /health
 ├── pipeline.py          push → authorise → workflow or agent → reply
-├── agents/              LangGraph router, specialist registry, prompts, state
+├── agents/              LangGraph router, specialists, grounded SQL, number grounding, prompts
 ├── tools/               SQL, finance, Sheets, Gmail/Drive action tools
 ├── rag/                 chunking, Qdrant store, retrieval with date filters, indexers
 ├── workflows/           sheet parser, source resolver, engine, run persistence
@@ -276,7 +288,7 @@ app/
 └── cli.py               admin CLI (auth, users, roles, perms, index, ask, poll)
 evals/                   retrieval / routing / end-to-end evals, corpus, labelled cases, results
 demo/                    fictional CRM seeder, demo config, sample contract, demo emails
-tests/                   88 tests: routing, chains, grounded SQL on SQLite, RBAC, workflows, RAG, API
+tests/                   102 tests: routing, chains, grounded SQL, number grounding, RBAC, workflows, RAG, API
 ```
 
 ## Testing

@@ -183,3 +183,96 @@ async def test_tool_agent_accepts_answer_after_reminder(scripted, as_user):
         AIMessage(content="The tool reported an authorisation error."),
     ]
     assert await specialists.sheets(state()) == "The tool reported an authorisation error."
+
+
+# --- Number grounding -------------------------------------------------------------------
+
+
+def feedback_listing(*numbers: str, reply: str):
+    """Answer step that asserts it received grounding feedback about `numbers`."""
+
+    def step(messages) -> AIMessage:
+        assert all(n in messages[-1].content for n in numbers), messages[-1].content
+        return AIMessage(content=reply)
+
+    return step
+
+
+async def test_misquoted_number_gets_one_retry(shop_db, scripted, as_user):
+    as_user("sql:*:read")
+    scripted += [
+        plan("SELECT customer, total FROM orders WHERE total > 100"),
+        AIMessage(content="Acme spent $210.50."),
+        feedback_listing("$210.50", reply="Acme spent $120.50."),
+    ]
+    with telemetry.trace() as trace:
+        reply = await specialists.sql(state())
+    assert reply.startswith("Acme spent $120.50.")
+    assert trace.grounding == [
+        {"agent": "sql", "unverified": ["$210.50"], "final": [], "retried": True, "fallback": False}
+    ]
+    assert scripted == []
+
+
+async def test_misquoted_twice_falls_back_to_rows_rendered_by_code(shop_db, scripted, as_user):
+    as_user("sql:*:read")
+    scripted += [
+        plan("SELECT customer, total FROM orders ORDER BY id"),
+        AIMessage(content="Acme spent $210.50."),
+        AIMessage(content="Acme spent $220.50."),
+    ]
+    with telemetry.trace() as trace:
+        reply = await specialists.sql(state())
+    answer = reply.split("**Query used**")[0]
+    assert "$220.50" not in answer
+    assert "| customer | total |" in answer and "| Acme | 120.5 |" in answer and "| Globex | 80.0 |" in answer
+    assert trace.grounding[0]["fallback"] is True
+
+
+async def test_grounded_answer_is_not_retried(shop_db, scripted, as_user):
+    as_user("sql:*:read")
+    scripted += [plan("SELECT customer, total FROM orders ORDER BY id"), AIMessage(content="Acme: $120.50, 2 orders.")]
+    with telemetry.trace() as trace:
+        reply = await specialists.sql(state())
+    assert reply.startswith("Acme: $120.50, 2 orders.")
+    assert trace.grounding[0]["retried"] is False and scripted == []
+
+
+async def test_tool_agent_retries_misquote_and_keeps_answer_if_still_ungrounded(scripted, as_user):
+    from langchain_core.tools import tool
+
+    @tool
+    def get_total() -> str:
+        """Total revenue."""
+        return '{"total": 120.5}'
+
+    as_user("sheets:read")
+    scripted += [
+        call("get_total"),
+        AIMessage(content="Total is $210.50."),
+        feedback_listing("$210.50", reply="$120.50"),
+    ]
+    with telemetry.trace() as trace:
+        assert await specialists.run_tool_agent(state(), "prompt", [get_total], name="t") == "$120.50"
+    assert trace.grounding[0]["final"] == []
+
+    scripted += [call("get_total"), AIMessage(content="$210.50"), AIMessage(content="Still $230.00")]
+    with telemetry.trace() as trace:
+        assert await specialists.run_tool_agent(state(), "prompt", [get_total], name="t") == "Still $230.00"
+    assert trace.grounding[0] == {
+        "agent": "t",
+        "unverified": ["$210.50"],
+        "final": ["$230.00"],
+        "retried": True,
+        "fallback": False,
+    }
+
+
+async def test_knowledge_answer_is_checked_against_retrieved_context(scripted, as_user, monkeypatch):
+    async def fake_context(query, model=None):
+        return "[1] Refund Policy\nAnnual plans can be cancelled within 60 days."
+
+    monkeypatch.setattr(specialists, "retrieve_context", fake_context)
+    as_user("knowledge:read")
+    scripted += [AIMessage(content="Within 90 days [1]."), feedback_listing("90", reply="Within 60 days [1].")]
+    assert await specialists.knowledge(state()) == "Within 60 days [1]."

@@ -56,3 +56,13 @@ def test_demo_env_file_parses(monkeypatch):
     demo = Settings(_env_file="demo/.env.demo")
     assert demo.sql_databases["crm"].url.endswith("data/demo/crm.db")
     assert demo.allowed_senders == ["your-personal@gmail.com"]
+
+
+def test_e2e_grounding_stats():
+    from evals.e2e import grounding_stats
+
+    clean = {"agent": "sql", "unverified": [], "final": [], "retried": False, "fallback": False}
+    fixed = {"agent": "sql", "unverified": ["$9"], "final": [], "retried": True, "fallback": False}
+    fallback = {"agent": "sql", "unverified": ["$9"], "final": ["$8"], "retried": True, "fallback": True}
+    results = [{"grounding": [clean]}, {"grounding": [fixed]}, {"grounding": [fallback]}, {"grounding": []}]
+    assert grounding_stats(results) == {"checked": 3, "flagged": 2, "still_flagged": 1, "fallbacks": 1}

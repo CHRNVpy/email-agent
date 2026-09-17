@@ -70,7 +70,7 @@ async def test_date_filter_restricts_results(offline_kb):
         top_k=50,
         start="2026-06-01T00:00:00Z",
         end="2026-06-30T23:59:59Z",
-        score_threshold=0,
+        score_threshold=-1,  # hashing embeddings can score below 0
         date_mode="hard",
     )
     documents = {h.payload["source_id"] for h in hits}
@@ -88,8 +88,9 @@ def test_temporal_cue_prefilter():
 
 async def test_soft_date_filter_keeps_out_of_window_documents(offline_kb):
     window = {"start": "2026-06-01T00:00:00Z", "end": "2026-06-30T23:59:59Z"}
-    soft = await store.search("refund policy annual plan", top_k=10, score_threshold=0, **window)
-    hard = await store.search("refund policy annual plan", top_k=10, score_threshold=0, date_mode="hard", **window)
+    # Hashing embeddings can score below 0, so the threshold is -1 to see every document.
+    soft = await store.search("refund policy annual plan", top_k=10, score_threshold=-1, **window)
+    hard = await store.search("refund policy annual plan", top_k=10, score_threshold=-1, date_mode="hard", **window)
     soft_docs = [h.payload["source_id"] for h in soft]
     assert "refund-policy" in soft_docs  # dated 2025, outside the window, still found
     assert "refund-policy" not in {h.payload["source_id"] for h in hard}

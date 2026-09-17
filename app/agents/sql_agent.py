@@ -11,12 +11,12 @@ import json
 import logging
 from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 from sqlalchemy.engine import make_url
 
 from app import telemetry
-from app.agents import prompts
+from app.agents import grounding, prompts
 from app.agents.content import message_text, request_text
 from app.agents.state import AgentState
 from app.config import settings
@@ -55,6 +55,8 @@ Rules:
 - Write SELECT queries. Only if the user explicitly asks to change data, write one
   INSERT/UPDATE/DELETE with a WHERE clause.
 - Aggregate where possible, add LIMIT (at most {max_rows} rows) and readable column aliases.
+- Compute every number the reply will need (totals, differences, percentages, days) as a column
+  in the query: numbers in the reply are checked against the returned rows.
 - Format the SQL for reading: one clause per line (SELECT, FROM, JOIN, WHERE, GROUP BY, ...).
 - If the tables cannot answer the request, return no queries and a short clarification."""
 
@@ -148,13 +150,58 @@ async def run_sql(state: AgentState) -> str:
         SystemMessage(prompts.for_email(ANSWER_PROMPT)),
         HumanMessage(f"{request_text(state)}\n\nQuery results:\n{results_text}"),
     ]
+    evidence = grounding.evidence_numbers(request_text(state), prompts.today_line(), results_text)
 
-    async def answer(llm):
+    reply = await _answer(state, messages)
+    unverified = grounding.unverified_numbers(reply, evidence)
+    final, fallback = unverified, False
+    if unverified:
+        logger.warning("SQL reply has numbers not in the results %s; retrying", unverified)
+        retry = [*messages, AIMessage(reply), HumanMessage(grounding.feedback(unverified))]
+        reply = await _answer(state, retry)
+        final = grounding.unverified_numbers(reply, evidence)
+        if final:
+            logger.warning("SQL reply still ungrounded %s; sending the rows instead", final)
+            reply, fallback = _rows_reply(executed), True
+    telemetry.record_grounding("sql", unverified, final, retried=bool(unverified), fallback=fallback)
+    return reply.rstrip() + "\n\n" + _sql_appendix(executed)
+
+
+async def _answer(state: AgentState, messages: list) -> str:
+    async def call(llm):
         return message_text(await llm.ainvoke(messages))
 
     with telemetry.span("sql.answer"):
-        reply = await run_chat(state.model, answer, max_output_tokens=8192)
-    return reply.rstrip() + "\n\n" + _sql_appendix(executed)
+        return await run_chat(state.model, call, max_output_tokens=8192)
+
+
+def _cell(value: Any) -> str:
+    return "" if value is None else str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def _rows_reply(executed: list[tuple[SqlQuery, dict[str, Any]]]) -> str:
+    """Deterministic reply built by code, used when the model twice misquoted the results."""
+    parts = ["I couldn't write a summary whose numbers match the query results, so here they are exactly as returned:"]
+    for query, result in executed:
+        parts.append(f"**{query.purpose}**")
+        if "error" in result:
+            parts.append(f"The query failed: {result['error']}")
+        elif "rows" not in result:
+            parts.append(f"{result.get('rows_affected', 0)} row(s) changed.")
+        elif not result["rows"]:
+            parts.append("No rows.")
+        else:
+            trimmed = _trim(result)
+            columns = list(trimmed["rows"][0])
+            table = [
+                "| " + " | ".join(map(_cell, columns)) + " |",
+                "|" + "---|" * len(columns),
+                *("| " + " | ".join(_cell(row.get(c)) for c in columns) + " |" for row in trimmed["rows"]),
+            ]
+            parts.append("\n".join(table))
+            if "note" in trimmed:
+                parts.append(f"*{trimmed['note']}.*")
+    return "\n\n".join(parts)
 
 
 def _trim(result: dict[str, Any]) -> dict[str, Any]:

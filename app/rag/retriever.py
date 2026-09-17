@@ -1,5 +1,6 @@
 """Retrieval: natural-language date constraints + vector search + context formatting."""
 
+import calendar
 import logging
 import re
 from datetime import UTC, date, datetime
@@ -24,10 +25,8 @@ Request: {query}"""
 )
 
 
-_MONTHS = (
-    "january|february|march|april|may|june|july|august|september|october|november|december"
-    "|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec"
-)
+_MONTH_NAMES = {name.lower() for name in (*calendar.month_name[1:], *calendar.month_abbr[1:], "Sept")}
+_MONTHS = "|".join(sorted(_MONTH_NAMES, key=len, reverse=True))
 _TEMPORAL_CUE = re.compile(
     rf"\b(?:(?:19|20)\d{{2}}|q[1-4]|h[12]|ytd|{_MONTHS}"
     r"|today|yesterday|tomorrow|tonight|days?|weeks?|months?|quarters?|years?|weekly|monthly|daily"
